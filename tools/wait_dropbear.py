@@ -12,6 +12,7 @@ import os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OWNER = "nlkcodenew"
 REPO = "trimui-remote"
+WF = sys.argv[1] if len(sys.argv) > 1 else "dropbear"
 
 def token():
     p = subprocess.run(["git", "credential", "fill"],
@@ -41,7 +42,7 @@ def main():
     for i in range(27):
         data = api("/repos/%s/%s/actions/runs?per_page=5" % (OWNER, REPO), tok)
         runs = data.get("workflow_runs", []) if isinstance(data, dict) else []
-        cand = [r for r in runs if "dropbear" in (r.get("name", ""))]
+        cand = [r for r in runs if WF in (r.get("name", ""))]
         cand.sort(key=lambda r: r.get("run_number", 0), reverse=True)
         run = cand[0] if cand else None
         if run:
