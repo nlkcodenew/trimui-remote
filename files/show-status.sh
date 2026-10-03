@@ -41,44 +41,44 @@ fi
 
 {
 echo "========================================"
-echo "  TRIMUI REMOTE - thong tin SSH"
+echo "  TRIMUI REMOTE - thông tin SSH"
 echo "========================================"
 echo ""
-echo "[1] SSH trong mang LAN (cung WiFi):"
-echo "    Dia chi : $IP"
-echo "    Lenh    : ssh root@$IP -p 2222"
-echo "    Trang thai: $LAN"
+echo "[1] SSH trong mạng LAN (cùng WiFi):"
+echo "    Địa chỉ : $IP"
+echo "    Lệnh    : ssh root@$IP -p 2222"
+echo "    Trạng thái: $LAN"
 echo ""
 echo "    User    : root"
-echo "    Pass    : mat khau root cua may"
+echo "    Pass    : mật khẩu root của máy"
 echo ""
 if [ "$MODE" = "vps" ]; then
-  echo "[2] SSH qua Internet (VPS, port co dinh):"
+  echo "[2] SSH qua Internet (VPS, port cố định):"
 else
   echo "[2] SSH qua Internet (Pinggy):"
 fi
 if [ -n "$EP" ]; then
   H="${EP#tcp://}"; HOST="${H%:*}"; TPORT="${H##*:}"
-  echo "    Dia chi : $EP"
-  echo "    Lenh    : ssh root@$HOST -p $TPORT"
-  echo "    (port doi moi khi reconnect - xem lai o day)"
+  echo "    Địa chỉ : $EP"
+  echo "    Lệnh    : ssh root@$HOST -p $TPORT"
+  echo "    (port đổi mỗi khi reconnect - xem lại ở đây)"
 else
   if [ "$TUN_RUN" = "1" ]; then
     if [ "$MODE" = "vps" ]; then
-      echo "    Dang mo tunnel... vai giay nua go: sh tunnel.sh log"
-      echo "    tren PC: ssh trimui-brick  (user root)"
+      echo "    Đang mở tunnel... vài giây nữa gõ: sh tunnel.sh log"
+      echo "    trên PC: ssh trimui-brick  (user root)"
     else
-      echo "    Dang cho Pinggy... go: sh tunnel.sh log"
+      echo "    Đang chờ Pinggy... gõ: sh tunnel.sh log"
     fi
   else
-    echo "    CHUA BAT (mo lai app hoac: sh tunnel.sh start)"
+    echo "    CHƯA BẬT (mở lại app hoặc: sh tunnel.sh start)"
   fi
 fi
 echo ""
 echo "----------------------------------------"
-echo "Copy log ve: sh collect-logs.sh"
-echo "Tat SSH LAN: sh remote.sh stop"
-echo "Tat Internet: sh tunnel.sh stop"
-echo "Thoat man hinh nay: phim B 2 lan"
+echo "Copy log về: sh collect-logs.sh"
+echo "Tắt SSH LAN: sh remote.sh stop"
+echo "Tắt Internet: sh tunnel.sh stop"
+echo "Thoát màn hình này: phím B 2 lần"
 echo "----------------------------------------"
 } | tee "$OUT"

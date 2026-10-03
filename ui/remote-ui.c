@@ -8,9 +8,11 @@
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define BTN_B 0
 #define BTN_X 3
@@ -22,6 +24,161 @@ static SDL_Window *win;
 static SDL_Renderer *ren;
 static TTF_Font *f_title, *f_body, *f_small;
 static int W, H;
+static char fontpath[768];
+
+/* Intro logo NLK 2.2s giong het Music-Player / chiaki-ng / Terminal:
+ * nen (8,8,12), chu do (229,9,20), bay len lan luot + overshoot + quet trang.
+ * Bam phim bat ky de bo qua. Tat bang REMOTE_NO_INTRO=1, file intro.off /
+ * .no-intro canh app, hoac config.json "intro": false. */
+static int intro_disabled(const char *appdir) {
+    const char *env = getenv("REMOTE_NO_INTRO");
+    if (env && strcmp(env, "1") == 0) return 1;
+    char p[768];
+    snprintf(p, sizeof(p), "%s/intro.off", appdir);
+    if (access(p, F_OK) == 0) return 1;
+    snprintf(p, sizeof(p), "%s/.no-intro", appdir);
+    if (access(p, F_OK) == 0) return 1;
+    snprintf(p, sizeof(p), "%s/config.json", appdir);
+    FILE *cfg = fopen(p, "r");
+    if (!cfg) return 0;
+    char buf[2048];
+    size_t n = fread(buf, 1, sizeof(buf) - 1, cfg);
+    buf[n] = '\0';
+    fclose(cfg);
+    char *key = strstr(buf, "\"intro\"");
+    if (!key) return 0;
+    char *colon = strchr(key, ':');
+    if (!colon) return 0;
+    colon++;
+    while (*colon == ' ' || *colon == '\t') colon++;
+    return strncmp(colon, "false", 5) == 0;
+}
+
+static double intro_spread(double progress, double k) {
+    double ease = progress / 0.55;
+    if (ease < 0.0) ease = 0.0;
+    if (ease > 1.0) ease = 1.0;
+    return (4.0 + 26.0 * (1.0 - (1.0 - ease) * (1.0 - ease))) * k;
+}
+
+static void play_intro(const char *appdir) {
+    if (intro_disabled(appdir)) return;
+    if (!ren || W <= 0 || H <= 0) return;
+    double s = W / 1024.0, sy = H / 768.0;
+    if (sy < s) s = sy;
+    if (s < 0.75) s = 0.75;
+    int giant = (int)(132.0 * s + 0.5);
+    if (giant < 24) giant = 24;
+    double k = giant / 132.0;
+    TTF_Font *font = TTF_OpenFont(fontpath, giant);
+    if (!font) {
+        static const int smaller[] = {260, 220, 190, 160, 132, 100};
+        for (size_t i = 0; i < sizeof(smaller) / sizeof(smaller[0]) && !font; i++) {
+            if (smaller[i] >= giant) continue;
+            font = TTF_OpenFont(fontpath, smaller[i]);
+            if (font) { giant = smaller[i]; k = giant / 132.0; }
+        }
+    }
+    if (!font) return;
+    SDL_Color dark = {60, 5, 8, 255};
+    SDL_Color bright = {229, 9, 20, 255};
+    SDL_Color white = {255, 255, 255, 255};
+    static const char *letters = "NLK";
+    SDL_Texture *tex_dark[3] = {NULL, NULL, NULL};
+    SDL_Texture *tex_bright[3] = {NULL, NULL, NULL};
+    SDL_Texture *tex_white[3] = {NULL, NULL, NULL};
+    int gw[3] = {0, 0, 0}, gh[3] = {0, 0, 0};
+    for (int i = 0; i < 3; i++) {
+        char ch[2] = {letters[i], '\0'};
+        SDL_Surface *sd = TTF_RenderUTF8_Blended(font, ch, dark);
+        SDL_Surface *sb = TTF_RenderUTF8_Blended(font, ch, bright);
+        SDL_Surface *sw = TTF_RenderUTF8_Blended(font, ch, white);
+        if (sb) { gw[i] = sb->w; gh[i] = sb->h; }
+        if (sd) { tex_dark[i] = SDL_CreateTextureFromSurface(ren, sd); SDL_FreeSurface(sd); }
+        if (sb) { tex_bright[i] = SDL_CreateTextureFromSurface(ren, sb); SDL_FreeSurface(sb); }
+        if (sw) { tex_white[i] = SDL_CreateTextureFromSurface(ren, sw); SDL_FreeSurface(sw); }
+    }
+    TTF_CloseFont(font);
+    int usable = 0;
+    for (int i = 0; i < 3; i++) if (tex_bright[i]) usable++;
+    if (usable < 3) {
+        for (int i = 0; i < 3; i++) {
+            if (tex_dark[i]) SDL_DestroyTexture(tex_dark[i]);
+            if (tex_bright[i]) SDL_DestroyTexture(tex_bright[i]);
+            if (tex_white[i]) SDL_DestroyTexture(tex_white[i]);
+        }
+        return;
+    }
+    const double duration_ms = 2200.0;
+    Uint32 start = SDL_GetTicks();
+    SDL_Event ev;
+    int center_y = H / 2;
+    double total_glyph = gw[0] + gw[1] + gw[2];
+    int skipped = 0;
+    while (!skipped) {
+        Uint32 elapsed = SDL_GetTicks() - start;
+        if ((double)elapsed >= duration_ms) break;
+        double progress = (double)elapsed / duration_ms;
+        while (SDL_PollEvent(&ev)) {
+            if (ev.type == SDL_QUIT || ev.type == SDL_KEYDOWN ||
+                ev.type == SDL_JOYBUTTONDOWN || ev.type == SDL_JOYHATMOTION)
+                { skipped = 1; break; }
+        }
+        if (skipped) break;
+        double spacing = intro_spread(progress, k);
+        double total = total_glyph + spacing * 2.0;
+        double fit = 1.0;
+        if (total > 0.0 && (W - 80) / total < fit) fit = (W - 80) / total;
+        if (fit < 0.05) fit = 0.05;
+        int cursor = (int)((W - total * fit) / 2.0);
+        SDL_SetRenderDrawColor(ren, 8, 8, 12, 255);
+        SDL_RenderClear(ren);
+        for (int i = 0; i < 3; i++) {
+            int dw = (int)(gw[i] * fit), dh = (int)(gh[i] * fit);
+            int x = cursor + (int)((gw[i] * fit - dw) / 2.0);
+            double enter_at = 0.05 + i * 0.16;
+            double local = (progress - enter_at) / 0.30;
+            if (local > 0.0) {
+                if (local > 1.0) local = 1.0;
+                int rise = (int)((1.0 - local) * 90.0 * k);
+                if (local > 0.65) {
+                    double sn = sin((local - 0.65) / 0.35 * 3.14159265358979323846);
+                    rise += (int)(-14.0 * k * sn);
+                }
+                int y = center_y - dh / 2 + rise;
+                SDL_Texture *tex = (local * 1.5 >= 0.75) ? tex_bright[i] : tex_dark[i];
+                if (local * 1.5 >= 0.75 && tex_dark[i]) {
+                    SDL_Rect glow = {x + (int)(4.0 * fit * k), y + (int)(6.0 * fit * k), dw, dh};
+                    SDL_RenderCopy(ren, tex_dark[i], NULL, &glow);
+                }
+                SDL_Rect r = {x, y, dw, dh};
+                SDL_RenderCopy(ren, tex, NULL, &r);
+            }
+            cursor += (int)((gw[i] + spacing) * fit);
+        }
+        if (progress > 0.72) {
+            double sweep = (progress - 0.72) / 0.28;
+            cursor = (int)((W - total * fit) / 2.0);
+            for (int i = 0; i < 3; i++) {
+                int dw = (int)(gw[i] * fit), dh = (int)(gh[i] * fit);
+                double center = i / 2.0;
+                if (tex_white[i] && fabs(sweep - center * 0.9) < 0.18) {
+                    SDL_Rect r = {cursor + (int)((gw[i] * fit - dw) / 2.0), center_y - dh / 2, dw, dh};
+                    SDL_RenderCopy(ren, tex_white[i], NULL, &r);
+                }
+                cursor += (int)((gw[i] + spacing) * fit);
+            }
+        }
+        SDL_RenderPresent(ren);
+        SDL_Delay(16);
+    }
+    for (int i = 0; i < 3; i++) {
+        if (tex_dark[i]) SDL_DestroyTexture(tex_dark[i]);
+        if (tex_bright[i]) SDL_DestroyTexture(tex_bright[i]);
+        if (tex_white[i]) SDL_DestroyTexture(tex_white[i]);
+    }
+    while (SDL_PollEvent(&ev)) { /* xa het phim nhan trong intro */ }
+}
 
 static void draw_text(TTF_Font *f, const char *s, int cx, int y,
                       Uint8 r, Uint8 g, Uint8 b) {
@@ -84,8 +241,8 @@ int main(int argc, char **argv) {
     ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_SOFTWARE);
     if (!ren) return 1;
 
-    char fontpath[768];
     snprintf(fontpath, sizeof(fontpath), "%s/assets/font.ttf", appdir);
+    play_intro(appdir);
     int sz_title = H / 11, sz_body = H / 19, sz_small = H / 26;
     if (sz_body < 20) sz_body = 20;
     f_title = TTF_OpenFont(fontpath, sz_title);
@@ -146,7 +303,7 @@ int main(int argc, char **argv) {
         int y = H / 14;
         int lh = sz_body + sz_body / 3;
         draw_text(f_title, title, W / 2, y, 229, 9, 20); y += sz_title + lh;
-        draw_text(f_body, "SSH trong mang LAN (cung WiFi):", W / 2, y, 255, 255, 255); y += lh;
+        draw_text(f_body, "SSH trong mạng LAN (cùng WiFi):", W / 2, y, 255, 255, 255); y += lh;
         draw_text(f_body, lan, W / 2, y, 63, 185, 80); y += lh;
         draw_text(f_body, "SSH qua Internet:", W / 2, y, 255, 255, 255); y += lh;
         if (ep_buf[0]) {
@@ -161,14 +318,15 @@ int main(int argc, char **argv) {
                 memmove(net, net + 1, strlen(net));
             draw_text(f_body, net, W / 2, y, 63, 185, 80);
             y += lh;
-            draw_text(f_small, "tren PC: ssh trimui-brick  (user root)", W / 2, y, 160, 160, 160); y += lh;
+            draw_text(f_small, "trên PC: ssh trimui-brick  (user root)", W / 2, y, 160, 160, 160); y += lh;
         } else {
-            draw_text(f_body, "dang ket noi...", W / 2, y, 255, 200, 60); y += lh;
+            draw_text(f_body, "đang kết nối...", W / 2, y, 255, 200, 60); y += lh;
         }
         char auth[160];
-        snprintf(auth, sizeof(auth), "User: root   Pass: mat khau root cua may");
+        snprintf(auth, sizeof(auth), "User: root   Pass: mật khẩu root của máy");
         draw_text(f_body, auth, W / 2, y, 255, 255, 255); y += lh * 2;
-        draw_text(f_small, "B: thoat man hinh (dich vu van chay)  |  X: TAT dich vu + thoat", W / 2, H - sz_small * 3, 140, 140, 140);
+        draw_text(f_small, "B: thoát màn hình (dịch vụ vẫn chạy)", W / 2, H - sz_small * 5, 140, 140, 140);
+        draw_text(f_small, "X: TẮT dịch vụ + thoát", W / 2, H - sz_small * 3, 140, 140, 140);
 
         if (confirm_at) {
             SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_BLEND);
@@ -183,7 +341,7 @@ int main(int argc, char **argv) {
             SDL_RenderDrawRect(ren, &box);
             SDL_Rect box2 = {box.x + 3, box.y + 3, box.w - 6, box.h - 6};
             SDL_RenderDrawRect(ren, &box2);
-            draw_text(f_body, confirm_what == 2 ? "BAM X LAN NUA DE TAT DICH VU" : "BAM B LAN NUA DE THOAT", W / 2, H / 2 - sz_body, 255, 255, 255);
+            draw_text(f_body, confirm_what == 2 ? "BẤM X LẦN NỮA ĐỂ TẮT DỊCH VỤ" : "BẤM B LẦN NỮA ĐỂ THOÁT", W / 2, H / 2 - sz_body, 255, 255, 255);
         }
         SDL_RenderPresent(ren);
         SDL_Delay(33);

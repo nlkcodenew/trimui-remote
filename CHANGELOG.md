@@ -1,5 +1,14 @@
 # Changelog — Trimui-Remote
 
+## v0.8.0
+
+- **Chữ có dấu đầy đủ** trên màn hình app và file `STATUS.txt` (font DejaVu đã có
+  sẵn chữ Việt; dòng gợi ý tách 2 hàng cho vừa màn hình).
+- **Intro logo NLK 2.2 giây** khi mở app, giống hệt Music-Player / chiaki-ng /
+  Terminal (bay lên lần lượt, đổi đỏ, tia sáng quét; bấm phím bất kỳ để bỏ qua;
+  tắt bằng `REMOTE_NO_INTRO=1`, file `intro.off`/`.no-intro` hoặc
+  `"intro": false` trong `config.json`).
+
 ## v0.7.0
 
 - Thêm nút **X: tắt dịch vụ + thoát** (tiết kiệm pin): bấm X 2 lần, panel xác nhận
