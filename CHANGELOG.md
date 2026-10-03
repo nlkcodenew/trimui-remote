@@ -1,5 +1,11 @@
 # Changelog — Trimui-Remote
 
+## v0.5.3
+
+- Tự hủy tunnel-loop của bản cũ khi mở app bản mới (loop cũ giữ lệnh `ssh` sai nên
+  giữ mãi cũng không nối được; nay `tunnel.sh start` so version trong loop và làm
+  lại loop mới).
+
 ## v0.5.2
 
 - Sửa tunnel không bao giờ nối được (`ssh: not found` lặp vô hạn): `tunnel.sh` tách

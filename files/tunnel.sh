@@ -119,7 +119,17 @@ build_cmd() {
   fi
 }
 cmd_start() {
-  if p="$(running_pid)"; then echo "tunnel dang chay pid=$p"; cmd_status; return 0; fi
+  # Loop cu cua ban cu (lenh sai) phai huy truoc khi dung lai.
+  CURVER="$(cat "$APP/VERSION" 2>/dev/null | tr -d ' \r\n')"
+  if p0="$(running_pid)"; then
+    LOOPVER="$(grep -a -m1 'tunnel-loop v' "$LOOPF" 2>/dev/null | sed 's/.*tunnel-loop v//;s/[^0-9.]//g')"
+    if [ -z "$LOOPVER" ] || [ -n "$CURVER" ] && [ "$LOOPVER" != "$CURVER" ]; then
+      echo "huy tunnel-loop cu (v$LOOPVER) de len v$CURVER..."
+      cmd_stop >/dev/null 2>&1
+    else
+      echo "tunnel dang chay pid=$p0"; cmd_status; return 0
+    fi
+  fi
   # SSH LAN phai chay truoc: tunnel forward ve port dropbear tren may.
   if ! sh "$APP/remote.sh" status >/dev/null 2>&1; then
     echo "bat SSH LAN truoc..."
@@ -151,7 +161,7 @@ cmd_start() {
   esac
   cat > "$LOOPF" <<EOF
 #!/bin/sh
-# tu sinh boi tunnel.sh - dung sua tay
+# tunnel-loop v$CURVER - tu sinh boi tunnel.sh - dung sua tay
 while :; do
   echo "--- \$(date '+%Y-%m-%d %H:%M:%S') chay: $TUNCMD" >> "$TLOG" 2>&1
   $TUNCMD >> "$TLOG" 2>&1

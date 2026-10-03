@@ -56,6 +56,7 @@ def main():
         check(kw in t, "tunnel.sh chua %s" % kw)
     check('ctype="${PC##*|}"' in t, "tunnel.sh tach loai client dung (##*|)")
     check(t.index("tunnel_key") < t.index('TUNCMD="$(build_cmd'), "tunnel.sh nap key TRUOC khi build lenh")
+    check("tunnel-loop v$CURVER" in t, "tunnel.sh danh dau version loop (huy loop cu)")
     check("tailscale" not in t.lower(), "tunnel.sh khong keo Tailscale (giu nhe)")
     s = open(os.path.join(ROOT, "files", "show-status.sh"), encoding="utf-8", errors="replace").read()
     for kw in ("wait_endpoint", "STATUS.txt", "Pinggy"):
