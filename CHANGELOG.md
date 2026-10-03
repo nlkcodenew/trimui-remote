@@ -1,5 +1,13 @@
 # Changelog — Trimui-Remote
 
+## v0.5.1
+
+- Sửa `remote-ui` không chạy (`GLIBC_2.34 not found` — build lại trên Ubuntu 18.04,
+  tương thích glibc từ 2.27).
+- Sửa `remote.sh start` báo thất bại giả: CPU máy yếu + lần đầu sinh host-key nên
+  quá 1 giây — nay chờ pidfile tới ~8 giây (log thật đã cho thấy dropbear vẫn chạy).
+- `show-status` hiện đúng chữ VPS/Pinggy theo chế độ tunnel đang dùng.
+
 ## v0.5.0
 
 - **OTA tự động (repo đã public)**: mở app là kiểm tra + lên bản mới foreground

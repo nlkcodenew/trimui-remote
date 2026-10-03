@@ -84,16 +84,22 @@ cmd_start() {
     fi
   fi
   sleep 1
-  if p="$(running_pid)"; then
-    i="$(lan_ip)"; [ -n "$i" ] || i="?"
-    echo "$i" > "$IPFILE" 2>/dev/null
-    {
-      echo "dropbear pid=$p port=$PORT ip=$i"
-      echo "ssh root@$i -p $PORT   (mat khau root cua may)"
-      echo "scp -P $PORT root@$i:/mnt/SDCARD/Logs/ ./  (copy log ve)"
-    } | tee -a "$LOG"
-    return 0
-  fi
+  # CPU may yeu + lan dau sinh host-key: cho pidfile toi da ~8s.
+  n=0
+  while [ "$n" -lt 8 ]; do
+    if p="$(running_pid)"; then
+      i="$(lan_ip)"; [ -n "$i" ] || i="?"
+      echo "$i" > "$IPFILE" 2>/dev/null
+      {
+        echo "dropbear pid=$p port=$PORT ip=$i"
+        echo "ssh root@$i -p $PORT   (mat khau root cua may)"
+        echo "scp -P $PORT root@$i:/mnt/SDCARD/Logs/ ./  (copy log ve)"
+      } | tee -a "$LOG"
+      return 0
+    fi
+    sleep 1
+    n=$((n + 1))
+  done
   echo "khong khoi dong duoc dropbear, xem $LOG" >&2
   tail -n 20 "$LOG" 2>/dev/null >&2
   return 1

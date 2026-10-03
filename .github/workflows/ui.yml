@@ -12,7 +12,7 @@ jobs:
       - name: Build remote-ui (container arm64)
         run: |
           set -e
-          docker run --platform linux/arm64 --rm -v "$PWD:/w" ubuntu:22.04 bash -c "
+          docker run --platform linux/arm64 --rm -v "$PWD:/w" ubuntu:18.04 bash -c "
             set -e
             apt-get update
             apt-get install -y --no-install-recommends gcc make file binutils libsdl2-dev libsdl2-ttf-dev

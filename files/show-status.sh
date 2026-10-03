@@ -27,6 +27,9 @@ IP="$(sh "$APP/remote.sh" ip 2>/dev/null)"
 [ -n "$IP" ] || IP="?"
 TUN_RUN=0
 sh "$APP/tunnel.sh" status >/dev/null 2>&1 && TUN_RUN=1
+MODE=pinggy
+[ -f "$APP/data/tunnel.conf" ] && . "$APP/data/tunnel.conf" 2>/dev/null
+[ -n "$MODE" ] || MODE=pinggy
 
 EP=""
 if [ "$TUN_RUN" = "1" ] && [ "$1" != "--file-only" ]; then
@@ -49,7 +52,11 @@ echo ""
 echo "    User    : root"
 echo "    Pass    : mat khau root cua may"
 echo ""
-echo "[2] SSH qua Internet (Pinggy):"
+if [ "$MODE" = "vps" ]; then
+  echo "[2] SSH qua Internet (VPS, port co dinh):"
+else
+  echo "[2] SSH qua Internet (Pinggy):"
+fi
 if [ -n "$EP" ]; then
   H="${EP#tcp://}"; HOST="${H%:*}"; TPORT="${H##*:}"
   echo "    Dia chi : $EP"
@@ -57,7 +64,12 @@ if [ -n "$EP" ]; then
   echo "    (port doi moi khi reconnect - xem lai o day)"
 else
   if [ "$TUN_RUN" = "1" ]; then
-    echo "    Dang cho Pinggy... go: sh tunnel.sh log"
+    if [ "$MODE" = "vps" ]; then
+      echo "    Dang mo tunnel... vai giay nua go: sh tunnel.sh log"
+      echo "    tren PC: ssh trimui-brick  (user root)"
+    else
+      echo "    Dang cho Pinggy... go: sh tunnel.sh log"
+    fi
   else
     echo "    CHUA BAT (mo lai app hoac: sh tunnel.sh start)"
   fi
