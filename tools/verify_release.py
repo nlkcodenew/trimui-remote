@@ -88,6 +88,8 @@ def main():
         check("Apps/TrimuiRemote/launch.sh" in names, "ZIP co Apps/TrimuiRemote/launch.sh")
         check("Apps/TrimuiRemote/remote.sh" in names, "ZIP co remote.sh")
         check(not any("secrets" in n for n in names), "ZIP khong chua secret")
+        check("Apps/TrimuiRemote/tunnel.conf" not in names,
+              "ZIP khong ship tunnel.conf that (OTA an toan)")
     else:
         print("SKIP kiem tra ZIP (chua chay make_release.py)")
     if WARN:

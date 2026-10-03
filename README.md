@@ -55,8 +55,10 @@ sh /mnt/SDCARD/Apps/TrimuiRemote/remote.sh stop
 ## Dùng SSH qua Internet bằng VPS (chính)
 
 Máy game tự mở reverse-tunnel về VPS jump-host của bạn (máy giữ một port riêng
-`VPS_RPORT` trên VPS, cấu hình trong `files/tunnel.conf`).
-Điền VPS của bạn vào `tunnel.conf` trước khi đóng gói, không cần sửa gì thêm.
+`VPS_RPORT` trên VPS).
+Điền VPS của bạn vào `data/tunnel.conf` trên máy (qua SSH/Terminal), hoặc vào
+`files/tunnel.conf` cục bộ trước khi đóng gói (file này không commit, không ship
+trong ZIP — máy mới dùng `tunnel.conf.example`, mặc định pinggy).
 
 Trên máy (trong Trimui Terminal, sau khi đã bật app):
 
