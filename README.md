@@ -22,10 +22,13 @@ Một bản duy nhất chạy cả **Brick Pro (1024×768)** và **Smart Pro S (
 
 1. Tải `trimui-remote-vX.Y.Z.zip` ở mục **Releases** của repo này.
 2. Giải nén vào **gốc thẻ nhớ** để có `Apps/TrimuiRemote/launch.sh`.
-3. Lắp thẻ vào máy, mở **Trimui Remote** rồi chờ ~15 giây:
-   - App tự bật SSH LAN + tunnel Internet, rồi **tự thoát** (không có màn hình
-     gì để đọc — cố ý, vì không cần gõ hay nhìn gì trên máy).
-   - SSH nền **mất khi reboot/tắt máy** (mở app lại là có).
+3. Lắp thẻ vào máy, mở **Trimui Remote** rồi chờ:
+   - App tự kiểm tra bản mới (OTA, tối đa ~60s), nếu có sẽ tự lên bản mới và
+     **tự mở lại** — bạn chỉ mở đúng 1 lần.
+   - App tự bật SSH LAN + tunnel Internet, rồi hiện **màn hình hướng dẫn chữ to**:
+     cách SSH LAN, cách SSH Internet, user `root` + mật khẩu.
+   - Thoát màn hình: **phím B 2 lần** (có panel xác nhận to giữa màn hình).
+     Thoát màn hình **không tắt** dịch vụ nền.
    - Muốn tắt hẳn: trong Trimui Terminal gõ `sh remote.sh stop` và `sh tunnel.sh stop`
      trong thư mục app.
 

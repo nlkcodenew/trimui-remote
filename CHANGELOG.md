@@ -1,5 +1,15 @@
 # Changelog — Trimui-Remote
 
+## v0.5.0
+
+- **OTA tự động (repo đã public)**: mở app là kiểm tra + lên bản mới foreground
+  (tối đa 60s), xong **tự khởi động lại app** chạy code mới ngay — đúng 1 lần mở.
+  Tắt bằng `REMOTE_NO_OTA=1`.
+- **Màn hình hướng dẫn riêng (chữ TO, có dấu)**: không dùng chung Terminal nữa
+  (chữ nhỏ khó đọc) mà dùng binary `remote-ui` vẽ bằng pixel thật: cách SSH LAN,
+  cách SSH Internet, user/pass. Thoát bằng **B 2 lần**, có **panel xác nhận to
+  giữa màn hình**; thoát màn hình không tắt dịch vụ nền.
+
 ## v0.4.0
 
 - **Bỏ màn hình terminal khỏi app (chạy ẩn hoàn toàn)**: đúng mục đích “PC remote vào
