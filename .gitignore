@@ -1,0 +1,9 @@
+data/
+dist/
+*.log
+*.tgz
+.update_staging/
+__pycache__/
+.ota-status
+.ota-status.tmp
+Remote-ip.txt

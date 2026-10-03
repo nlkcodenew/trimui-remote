@@ -1,0 +1,67 @@
+{
+  "version": "0.2.0",
+  "app": "trimui-remote",
+  "built": "2026-10-03T08:29:26+07:00",
+  "files": [
+    {
+      "path": "VERSION",
+      "sha256": "1f930dd1f133c1f97a94fe3acb8db34372cf4c01ffdb2b3ff4ca72f9494121e9",
+      "size": 6
+    },
+    {
+      "path": "collect-logs.sh",
+      "sha256": "a98da8b621669c1f710d3ff3103ea4cf74ff5685f50ae4e1f2dc6f6b59429a0a",
+      "size": 1231
+    },
+    {
+      "path": "config.json",
+      "sha256": "d7360fed333908e085879da6aed966fd6e54a6899ab4e6ab5ef42996c8145de8",
+      "size": 140
+    },
+    {
+      "path": "icon.png",
+      "sha256": "7cd52ed54485c7c91b23f545f41f6a45a73771c4c83c70a309e7360071a3f724",
+      "size": 6948
+    },
+    {
+      "path": "launch.sh",
+      "sha256": "96704604935e602a9ff704479319062394f86610e9ec430a6828efbd1ba14a79",
+      "size": 1172
+    },
+    {
+      "path": "net-survey.sh",
+      "sha256": "b17996e3373cec10eab7ea4f83c3662634632dac57332ba2ae06e1ef41de8ef7",
+      "size": 1601
+    },
+    {
+      "path": "ota-update.sh",
+      "sha256": "50a2fe1f0da96c72d0f36f12d20d1279b20e7f0afbb6e3fdae51cdc7f6f74fa0",
+      "size": 10014
+    },
+    {
+      "path": "remote.sh",
+      "sha256": "8b172fc0863fbb859dba07da8257787a0c111d78c35c5aca03735dcac08b3e41",
+      "size": 3890
+    },
+    {
+      "path": "tunnel.conf.example",
+      "sha256": "0343e86879dac4eb069c17a1d197f1abba083345d7664321e52b50ad1e5d4cc6",
+      "size": 513
+    },
+    {
+      "path": "tunnel.sh",
+      "sha256": "965f0e2b6c7b00c38a49e85e5eb225e8ad956304414bff436080a49d7a34c634",
+      "size": 5811
+    },
+    {
+      "path": "bin/README.txt",
+      "sha256": "ecae392dc097994de9e327091ab9f667a3021743d63654b66a1a0355e459bb9c",
+      "size": 1834
+    }
+  ],
+  "release_asset": {
+    "name": "trimui-remote-v0.2.0.zip",
+    "sha256": "42a96f111fd88939413176e9462f3c5042aba1d03339a87b786b096d9804479c",
+    "size": 18612
+  }
+}

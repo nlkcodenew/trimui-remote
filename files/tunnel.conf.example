@@ -1,0 +1,18 @@
+# tunnel.conf — cau hinh SSH tu xa (copy tu tunnel.conf.example)
+# Sua file data/tunnel.conf tren may, khong sua file mau nay.
+
+# pinggy: test nhanh, khong can VPS (mac dinh)
+# vps:    dung lau dai khi da co VPS (port cong cong co dinh)
+MODE=pinggy
+
+# --- Pinggy (chi dung khi MODE=pinggy) ---
+PINGGY_HOST=a.pinggy.io
+PINGGY_PORT=443
+PINGGY_USER=tcp
+
+# --- VPS (chi dung khi MODE=vps) ---
+VPS_HOST=
+VPS_PORT=22
+VPS_USER=root
+# Port cong cong tren VPS forward ve may game (dev ssh vao port nay).
+VPS_RPORT=12222

@@ -1,0 +1,6 @@
+{
+  "label": "Trimui Remote",
+  "icon": "icon.png",
+  "launch": "launch.sh",
+  "description": "SSH debug nhe cho Brick Pro / Smart Pro S"
+}
