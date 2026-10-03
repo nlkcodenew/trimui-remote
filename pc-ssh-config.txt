@@ -1,0 +1,14 @@
+# Append this block to ~/.ssh/config on your PC (next to your jump-host entry)
+# for remote SSH into the TrimUI handheld over your VPS.
+
+Host trimui-brick
+    HostName 127.0.0.1
+    # Port = VPS_RPORT from files/tunnel.conf (reverse-forwarded by the device).
+    Port <RPORT>
+    User root
+    ProxyJump <YOUR_JUMP_HOST>
+    StrictHostKeyChecking accept-new
+
+# Usage:  ssh trimui-brick
+# Path: PC -> VPS (<YOUR_JUMP_HOST>) -> 127.0.0.1:<RPORT> on the VPS,
+# which the handheld reverse-forwards to its local dropbear (port 2222).
