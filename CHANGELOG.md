@@ -1,5 +1,14 @@
 # Changelog — Trimui-Remote
 
+## v0.5.2
+
+- Sửa tunnel không bao giờ nối được (`ssh: not found` lặp vô hạn): `tunnel.sh` tách
+  nhầm loại client nên luôn dùng `ssh` hệ thống (vốn không có), thay vì `dbclient`
+  đóng gói sẵn. Nay dùng đúng `$APP/bin/dbclient` theo đường dẫn tuyệt đối.
+- Sửa khóa tunnel không tới được máy: khóa theo trong ZIP (`tunnel_key`) nay tự copy
+  vào `data/` ngay trước khi mở tunnel (lần đầu), kể cả convert sang định dạng
+  dropbear khi cần.
+
 ## v0.5.1
 
 - Sửa `remote-ui` không chạy (`GLIBC_2.34 not found` — build lại trên Ubuntu 18.04,

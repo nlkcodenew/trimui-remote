@@ -130,14 +130,22 @@ cmd_start() {
     echo "chay sh net-survey.sh de kiem tra, build theo bin/README.txt" >&2
     return 1
   }
-  ctype="${PC%%|*}"; cbin="${PC##*|}"
-  [ "$ctype" = "dbclient" ] && [ "$cbin" != "dbclient" ] && cbin="$cbin"
+  # PC dang "duong-dan|loai": tach dung (##*| lay sau |, %%|* lay truoc |).
+  ctype="${PC##*|}"; cbin="${PC%%|*}"
+  # Nap khoa tunnel vao data/ lan dau TRUOC khi build lenh (khoa theo may
+  # trong ZIP, data/ song sot qua OTA).
+  if [ ! -f "$DATA/tunnel_key" ] && [ -f "$APP/tunnel_key" ]; then
+    cp "$APP/tunnel_key" "$DATA/tunnel_key" 2>/dev/null
+    chmod 600 "$DATA/tunnel_key" 2>/dev/null
+  fi
   TUNCMD="$(build_cmd "$ctype")" || return 1
-  # Ghi client that vao loop (uu tien binary trong app).
+  # Dung binary trong app theo duong dan tuyet doi (PATH luc chay nen thieu).
   case "$ctype" in
     dbclient)
       if [ -x "$APP/bin/dbclient" ]; then
         TUNCMD="$APP/bin/${TUNCMD#dbclient }"
+      elif [ -x "$cbin" ] && [ "$cbin" != "dbclient" ]; then
+        TUNCMD="$cbin/${TUNCMD#dbclient }"
       fi
       ;;
   esac

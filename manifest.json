@@ -1,11 +1,11 @@
 {
-  "version": "0.5.1",
+  "version": "0.5.2",
   "app": "trimui-remote",
-  "built": "2026-10-03T10:12:29+07:00",
+  "built": "2026-10-03T10:24:25+07:00",
   "files": [
     {
       "path": "VERSION",
-      "sha256": "aba951626c8690ce493cbc8f018205bb468003f61fbf00fd3d3c71cebabc0177",
+      "sha256": "26e0ab83aa1ff6bd0ae3882787a92663aa19db128e1241ffc99375fb9ca0c121",
       "size": 6
     },
     {
@@ -60,8 +60,8 @@
     },
     {
       "path": "tunnel.sh",
-      "sha256": "976482a9866bfeb5edb4f682e4b8e0dcd80f0b5468f063d9c60b2ed656e446dc",
-      "size": 6729
+      "sha256": "cfc08b9b778e60a2ce90ba3b3ae88643db75a7cddcbe2420ccf2dbf3fffde000",
+      "size": 7144
     },
     {
       "path": "tunnel_key",
@@ -105,8 +105,8 @@
     }
   ],
   "release_asset": {
-    "name": "trimui-remote-v0.5.1.zip",
-    "sha256": "c472406ece9acdca113be0b978a7724b5ddaf4569b304db89b9aa18f3d87b098",
-    "size": 1187469
+    "name": "trimui-remote-v0.5.2.zip",
+    "sha256": "53acb7cb43b3e3c7c9103e754ec204e1bbef9055270ffa5685852bbf5840dea7",
+    "size": 1187614
   }
 }
