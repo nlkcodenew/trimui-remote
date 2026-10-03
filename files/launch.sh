@@ -47,5 +47,12 @@ export LD_LIBRARY_PATH="$APP/libs:/usr/trimui/lib:/usr/lib64:/usr/lib:/lib:$LD_L
 if [ -x "$APP/bin/remote-ui" ]; then
   IP="$(sh "$APP/remote.sh" ip 2>/dev/null)"
   "$APP/bin/remote-ui" "$IP" "$VER" "$APP" 2>> "$LOG"
+  UIRC=$?
+  # UI exit 3 = nguoi dung bam X 2 lan: TAT dich vu de tiet kiem pin.
+  if [ "$UIRC" = "3" ]; then
+    echo "nguoi dung chon TAT dich vu (X)." >> "$LOG" 2>&1
+    sh "$APP/tunnel.sh" stop >> "$LOG" 2>&1
+    sh "$APP/remote.sh" stop >> "$LOG" 2>&1
+  fi
 fi
 exit 0

@@ -13,6 +13,7 @@
 #include <string.h>
 
 #define BTN_B 0
+#define BTN_X 3
 #define BTN_SELECT 8
 #define BTN_START 9
 #define CONFIRM_MS 4000
@@ -99,6 +100,8 @@ int main(int argc, char **argv) {
     snprintf(lan, sizeof(lan), "ssh root@%s -p 2222", lan_ip);
 
     Uint32 confirm_at = 0;
+    int confirm_what = 0; /* 1 = thoat man hinh, 2 = tat dich vu + thoat */
+    int rc = 0;
     int running = 1;
     int pressed[16] = {0};
     poll_endpoint(1);
@@ -111,19 +114,27 @@ int main(int argc, char **argv) {
                 int b = (int)e.jbutton.button;
                 if (b >= 0 && b < 16) pressed[b] = 1;
                 if (pressed[BTN_SELECT] && pressed[BTN_START]) running = 0;
-                else if (b == BTN_B) {
+                else if (b == BTN_B || b == BTN_X) {
+                    int what = (b == BTN_B) ? 1 : 2;
                     Uint32 now = SDL_GetTicks();
-                    if (confirm_at && now - confirm_at < CONFIRM_MS) running = 0;
-                    else confirm_at = now;
+                    if (confirm_at && confirm_what == what && now - confirm_at < CONFIRM_MS) {
+                        rc = (what == 2) ? 3 : 0;
+                        running = 0;
+                    } else { confirm_at = now; confirm_what = what; }
                 }
             } else if (e.type == SDL_JOYBUTTONUP) {
                 int b = (int)e.jbutton.button;
                 if (b >= 0 && b < 16) pressed[b] = 0;
             } else if (e.type == SDL_KEYDOWN) {
-                if (e.key.keysym.sym == SDLK_ESCAPE) {
+                int what = 0;
+                if (e.key.keysym.sym == SDLK_ESCAPE) what = 1;
+                else if (e.key.keysym.sym == SDLK_x) what = 2;
+                if (what) {
                     Uint32 now = SDL_GetTicks();
-                    if (confirm_at && now - confirm_at < CONFIRM_MS) running = 0;
-                    else confirm_at = now;
+                    if (confirm_at && confirm_what == what && now - confirm_at < CONFIRM_MS) {
+                        rc = (what == 2) ? 3 : 0;
+                        running = 0;
+                    } else { confirm_at = now; confirm_what = what; }
                 }
             }
         }
@@ -157,7 +168,7 @@ int main(int argc, char **argv) {
         char auth[160];
         snprintf(auth, sizeof(auth), "User: root   Pass: mat khau root cua may");
         draw_text(f_body, auth, W / 2, y, 255, 255, 255); y += lh * 2;
-        draw_text(f_small, "Nhan B de thoat man hinh (dich vu van chay nen)", W / 2, H - sz_small * 3, 140, 140, 140);
+        draw_text(f_small, "B: thoat man hinh (dich vu van chay)  |  X: TAT dich vu + thoat", W / 2, H - sz_small * 3, 140, 140, 140);
 
         if (confirm_at) {
             SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_BLEND);
@@ -172,7 +183,7 @@ int main(int argc, char **argv) {
             SDL_RenderDrawRect(ren, &box);
             SDL_Rect box2 = {box.x + 3, box.y + 3, box.w - 6, box.h - 6};
             SDL_RenderDrawRect(ren, &box2);
-            draw_text(f_body, "BAM B LAN NUA DE THOAT", W / 2, H / 2 - sz_body, 255, 255, 255);
+            draw_text(f_body, confirm_what == 2 ? "BAM X LAN NUA DE TAT DICH VU" : "BAM B LAN NUA DE THOAT", W / 2, H / 2 - sz_body, 255, 255, 255);
         }
         SDL_RenderPresent(ren);
         SDL_Delay(33);
@@ -180,5 +191,5 @@ int main(int argc, char **argv) {
 
     TTF_Quit();
     SDL_Quit();
-    return 0;
+    return rc;
 }

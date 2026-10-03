@@ -1,5 +1,12 @@
 # Changelog — Trimui-Remote
 
+## v0.7.0
+
+- Thêm nút **X: tắt dịch vụ + thoát** (tiết kiệm pin): bấm X 2 lần, panel xác nhận
+  to giữa màn hình, app tắt cả SSH LAN lẫn tunnel rồi mới thoát. Mở app lúc cần
+  là dịch vụ chạy lại.
+- B (2 lần) giữ nguyên: chỉ thoát màn hình, dịch vụ vẫn chạy nền.
+
 ## v0.6.1
 
 - Sửa lỗi `.../bin/-p: not found` (thấy trên ảnh chụp log): dựng lệnh tunnel bằng

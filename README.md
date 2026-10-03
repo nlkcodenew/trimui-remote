@@ -28,6 +28,8 @@ Một bản duy nhất chạy cả **Brick Pro (1024×768)** và **Smart Pro S (
      user `root` + mật khẩu. Bản mới (nếu có) tự tải nền, lần mở sau dùng.
    - Thoát màn hình: **phím B 2 lần** (có panel xác nhận to giữa màn hình).
      Thoát màn hình **không tắt** dịch vụ nền.
+   - Tắt hẳn dịch vụ (tiết kiệm pin): **phím X 2 lần** trên màn hình app
+     (có panel xác nhận riêng). Lần sau mở app, dịch vụ chạy lại.
    - Muốn tắt hẳn: trong Trimui Terminal gõ `sh remote.sh stop` và `sh tunnel.sh stop`
      trong thư mục app.
 
