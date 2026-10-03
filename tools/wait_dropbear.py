@@ -13,6 +13,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OWNER = "nlkcodenew"
 REPO = "trimui-remote"
 WF = sys.argv[1] if len(sys.argv) > 1 else "dropbear"
+WANT_SHA = sys.argv[2] if len(sys.argv) > 2 else ""
 
 def token():
     p = subprocess.run(["git", "credential", "fill"],
@@ -44,9 +45,11 @@ def main():
         data = api("/repos/%s/%s/actions/runs?per_page=10" % (OWNER, REPO), tok)
         runs = data.get("workflow_runs", []) if isinstance(data, dict) else []
         cand = [r for r in runs if WF in (r.get("name", ""))]
+        if WANT_SHA:
+            cand = [r for r in cand if r.get("head_sha", "").startswith(WANT_SHA[:8])]
         cand.sort(key=lambda r: r.get("run_number", 0), reverse=True)
         if i == 0 and cand:
-            base = cand[0].get("run_number", 0)
+            base = 0 if WANT_SHA else cand[0].get("run_number", 0)
         new = [r for r in cand if r.get("run_number", 0) > base]
         run = new[0] if new else None
         if run is None:
