@@ -7,7 +7,13 @@
 - Buoc 2: chay nen de co-op retro 2 nguoi. DE SAU.
 - Pham vi v0.1: SSH LAN + chuan bi SSH tu xa (khac mang). Khong Tailscale.
 
-## v0.1 (dang lam) -> HOAN THANH skeleton, cho build binary
+## v0.3 (sua crash + man hinh + binary san) — DANG LAM
+
+- Nguyen nhan crash tren may that (log SD card): stock OS khong co dropbear,
+  app chua dong goi binary -> start that bai, launch thoat ngay.
+- Huong sua: CI build static dropbear/dbclient/dropbearkey, dong goi vao ZIP.
+- Man hinh thong tin: dung chung trimui-terminal -r show-status.sh.
+- OTA tat mac dinh khi repo private (REMOTE_OTA=1 de bat lai sau khi public).
 
 1. `net-survey.sh` — chay tren ca Brick Pro + Smart Pro S, gui log ve.
    Quyet dinh: stock OS co san dropbear/sshd/dbclient/ssh khong?

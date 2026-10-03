@@ -28,6 +28,7 @@ def main():
         version = h.read().strip().strip("vV")
     check(os.path.isfile(os.path.join(ROOT, "files", "launch.sh")), "launch.sh ton tai")
     check(os.path.isfile(os.path.join(ROOT, "files", "remote.sh")), "remote.sh ton tai")
+    check(os.path.isfile(os.path.join(ROOT, "files", "show-status.sh")), "show-status.sh ton tai")
     check(os.path.isfile(os.path.join(ROOT, "files", "tunnel.sh")), "tunnel.sh ton tai")
     check(os.path.isfile(os.path.join(ROOT, "files", "tunnel.conf.example")), "tunnel.conf.example ton tai")
     check(os.path.isfile(os.path.join(ROOT, "files", "net-survey.sh")), "net-survey.sh ton tai")
@@ -39,7 +40,7 @@ def main():
     check(shipped_version == version, "files/VERSION khop VERSION (%r)" % shipped_version)
     cfg = json.load(open(os.path.join(ROOT, "files", "config.json"), encoding="utf-8"))
     check(cfg.get("launch") == "launch.sh", "config.json tro dung launch.sh")
-    for sh in ("launch.sh", "remote.sh", "tunnel.sh", "net-survey.sh", "collect-logs.sh"):
+    for sh in ("launch.sh", "remote.sh", "tunnel.sh", "show-status.sh", "net-survey.sh", "collect-logs.sh"):
         p = os.path.join(ROOT, "files", sh)
         if os.path.isfile(p):
             with open(p, "rb") as h:
@@ -54,8 +55,14 @@ def main():
     for kw in ("PINGGY_HOST", "tunnel-loop", "MODE=vps", "VPS_RPORT"):
         check(kw in t, "tunnel.sh chua %s" % kw)
     check("tailscale" not in t.lower(), "tunnel.sh khong keo Tailscale (giu nhe)")
-    # Binary: WARN neu chua co (v0.1 cho phep fallback dropbear he thong).
-    for b in ("bin/dropbear", "bin/dropbearkey"):
+    s = open(os.path.join(ROOT, "files", "show-status.sh"), encoding="utf-8", errors="replace").read()
+    for kw in ("wait_endpoint", "STATUS.txt", "Pinggy"):
+        check(kw in s, "show-status.sh chua %s" % kw)
+    l = open(os.path.join(ROOT, "files", "launch.sh"), encoding="utf-8", errors="replace").read()
+    for kw in ("show-status.sh", "REMOTE_OTA", "TrimuiTerminal"):
+        check(kw in l, "launch.sh chua %s" % kw)
+    # Binary: BAT BUOC tu v0.3 (stock OS khong co san dropbear).
+    for b in ("bin/dropbear", "bin/dbclient", "bin/dropbearkey"):
         p = os.path.join(ROOT, "files", b)
         if os.path.isfile(p):
             with open(p, "rb") as h:
@@ -63,7 +70,7 @@ def main():
             check(magic[:4] == b"\x7fELF", "%s la ELF" % b)
             check(int.from_bytes(magic[18:20], "little") == 0xB7, "%s la AArch64" % b)
         else:
-            warn(False, "%s chua co (fallback dropbear he thong, build theo bin/README.txt)" % b)
+            check(False, "%s bat buoc tu v0.3 (build bang CI dropbear-static)" % b)
     zips = [f for f in os.listdir(DIST) if f.endswith(".zip")] if os.path.isdir(DIST) else []
     if zips:
         zp = os.path.join(DIST, sorted(zips)[-1])

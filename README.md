@@ -22,10 +22,12 @@ Một bản duy nhất chạy cả **Brick Pro (1024×768)** và **Smart Pro S (
 
 1. Tải `trimui-remote-vX.Y.Z.zip` ở mục **Releases** của repo này.
 2. Giải nén vào **gốc thẻ nhớ** để có `Apps/TrimuiRemote/launch.sh`.
-3. Lắp thẻ vào máy, mở **Trimui Remote** một lần:
-   - Lần mở đầu = **bật** SSH nền, rồi tự thoát về menu.
-   - Mở lần nữa = **tắt** SSH (toggle).
-   - SSH nền **mất khi reboot/tắt máy** (mở app lại là có).
+3. Lắp thẻ vào máy, mở **Trimui Remote**:
+   - App tự bật SSH LAN + tunnel Internet, rồi **hiện màn hình thông tin**:
+     địa chỉ SSH LAN, địa chỉ SSH Internet, user `root` + mật khẩu.
+   - Thoát màn hình (phím B 2 lần) — dịch vụ **vẫn chạy nền**.
+   - Muốn tắt hẳn: gõ trong màn hình đó `sh remote.sh stop` và `sh tunnel.sh stop`.
+4. Yêu cầu: máy đã cài **TrimuiTerminal** (để hiện màn hình thông tin).
 
 ## Dùng SSH trong mạng LAN (cùng WiFi)
 
@@ -137,9 +139,10 @@ Apps/TrimuiRemote/
 
 ## Build `bin/dropbear` (dành cho dev)
 
-Xem `files/bin/README.txt`. Tóm tắt: cross-compile static aarch64 bằng SDK TG5050
-(giống quy trình `Trimui-Terminal`), strip rồi chép vào `files/bin/`.
-Khi chưa có binary, `remote.sh` tự fallback sang `dropbear` của hệ thống nếu có.
+Binary static aarch64 (`dropbear`, `dbclient`, `dropbearkey`) được build tự động bằng
+GitHub Actions (`.github/workflows/dropbear.yml`, `zig cc -target aarch64-linux-musl`),
+tải về bằng `python3 tools/fetch_dropbear.py` rồi mới đóng gói release.
+Không cần build tay trừ khi đổi phiên bản dropbear.
 
 Đóng gói release (giống chuẩn Terminal):
 

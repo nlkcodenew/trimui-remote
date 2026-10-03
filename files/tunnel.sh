@@ -74,6 +74,11 @@ cmd_log() {
   [ -f "$TLOG" ] || { echo "chua co log"; return 1; }
   tail -n 30 "$TLOG" 2>/dev/null
 }
+cmd_endpoint() {
+  # Chi in dia chi tcp:// (rong neu chua co) - cho show-status.sh goi.
+  [ -f "$TLOG" ] || return 1
+  show_endpoint
+}
 build_cmd() {
   # $1 = kieu client (dbclient|ssh). In cau lenh tunnel ra stdout.
   c="$1"
@@ -159,5 +164,5 @@ cmd_stop() {
 }
 case "${1:-status}" in
   start) cmd_start;; stop) cmd_stop;; restart) cmd_stop; sleep 1; cmd_start;;
-  status) cmd_status;; log) cmd_log;; *) echo "dung: $0 start|stop|restart|status|log" >&2; exit 2;;
+  status) cmd_status;; log) cmd_log;; endpoint) cmd_endpoint;; *) echo "dung: $0 start|stop|restart|status|log|endpoint" >&2; exit 2;;
 esac

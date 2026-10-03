@@ -1,4 +1,10 @@
-# bin/ — binary dropbear cho Trimui-Remote (aarch64)
+# bin/ — binary dropbear cho Trimui-Remote (aarch64, static)
+
+Build TU DONG bang GitHub Actions (.github/workflows/dropbear.yml):
+zig cc -target aarch64-linux-musl, source dropbear-2024.86.
+
+Lay ve may dev: python3 tools/fetch_dropbear.py
+Khong commit binary bang tay.
 
 Thu muc nay se chua 2 file (build 1 lan, dung chung Brick Pro + Smart Pro S):
 

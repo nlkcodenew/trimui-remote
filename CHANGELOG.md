@@ -1,5 +1,19 @@
 # Changelog — Trimui-Remote
 
+## v0.3.0
+
+- **Sửa crash khi mở app**: nguyên nhân là stock OS không có sẵn `dropbear` mà app
+  chưa đóng gói binary → `remote.sh start` thất bại, `launch.sh` thoát ngay.
+  Nay đóng gói sẵn `bin/dropbear` + `bin/dbclient` + `bin/dropbearkey` (static
+  aarch64, build bằng GitHub Actions + `zig cc -target aarch64-linux-musl`).
+- **Màn hình thông tin khi mở app** (đúng yêu cầu): hiện địa chỉ SSH LAN, địa chỉ
+  SSH Internet (Pinggy), user `root` + mật khẩu, lệnh copy log, lệnh tắt.
+  Dùng chung binary `trimui-terminal` để hiển thị (không tốn thêm RAM thường trực).
+- `launch.sh` không còn báo “đã bật” giả khi start thất bại; tunnel Internet tự bật
+  cùng lúc (tắt bằng `REMOTE_NO_TUNNEL=1`).
+- **Tắt OTA tự động** vì repo đang private (manifest không tải được, chỉ ghi log
+  `failed`). Muốn bật lại sau khi public repo: mở app với `REMOTE_OTA=1`.
+
 ## v0.2.0
 
 - **SSH qua Internet bằng Pinggy** (không cần VPS): `tunnel.sh start/stop/status/log`.

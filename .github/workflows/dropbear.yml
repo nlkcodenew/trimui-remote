@@ -1,0 +1,44 @@
+name: dropbear-static
+on:
+  push:
+    paths: [".github/workflows/dropbear.yml"]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Install strip tool
+        run: |
+          set -e
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends binutils-aarch64-linux-gnu
+      - name: Install zig
+        run: |
+          set -e
+          cd /tmp
+          curl -fsSL -o zig.tar.xz https://ziglang.org/download/0.14.1/zig-linux-x86_64-0.14.1.tar.xz
+          tar xf zig.tar.xz
+          echo "/tmp/zig-linux-x86_64-0.14.1" >> "$GITHUB_PATH"
+          /tmp/zig-linux-x86_64-0.14.1/zig version
+      - name: Build static dropbear aarch64
+        run: |
+          set -e
+          cd /tmp
+          curl -fsSL -o dropbear.tar.bz2 https://matt.ucc.asn.au/dropbear/releases/dropbear-2024.86.tar.bz2
+          tar xf dropbear.tar.bz2
+          cd dropbear-2024.86
+          export CC="zig cc -target aarch64-linux-musl"
+          ./configure --host=aarch64-linux --disable-zlib --disable-syslog
+          make -j4 PROGRAMS="dropbear dbclient dropbearkey"
+          aarch64-linux-gnu-strip dropbear dbclient dropbearkey
+          file dropbear dbclient dropbearkey
+          # static that: khong co NEEDED dong
+          test -z "$(readelf -d dropbear | grep NEEDED || true)"
+          ls -l dropbear dbclient dropbearkey
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp dropbear dbclient dropbearkey "$GITHUB_WORKSPACE/out/"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dropbear-aarch64-static
+          path: out/
