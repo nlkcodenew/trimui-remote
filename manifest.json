@@ -1,11 +1,11 @@
 {
-  "version": "0.4.0",
+  "version": "0.5.0",
   "app": "trimui-remote",
-  "built": "2026-10-03T09:21:19+07:00",
+  "built": "2026-10-03T09:51:52+07:00",
   "files": [
     {
       "path": "VERSION",
-      "sha256": "40b8eb4000a913a7791090535f291d3d369874162a89ef3c9e3d4e887a1b9e79",
+      "sha256": "a0ad50640139a524f86591157145bf1d4674ea9c065bfea21558f0f7b04430c8",
       "size": 6
     },
     {
@@ -25,8 +25,8 @@
     },
     {
       "path": "launch.sh",
-      "sha256": "de63dbb92c9703b84883bc44f53a1a2bb6c20f348d8a636d4574e9af7388f579",
-      "size": 1406
+      "sha256": "cf2647a0aa07ba200af4f23d21e70ff419c986032ade1813b93f4baaa8bc5250",
+      "size": 2059
     },
     {
       "path": "net-survey.sh",
@@ -69,6 +69,11 @@
       "size": 387
     },
     {
+      "path": "assets/font.ttf",
+      "sha256": "7da195a74c55bef988d0d48f9508bd5d849425c1770dba5d7bfc6ce9ed848954",
+      "size": 757076
+    },
+    {
       "path": "bin/README.txt",
       "sha256": "b576e019f8971604bf8fd5784bfe3d56fc71e0d6fc4023132a16bc7a02730751",
       "size": 2050
@@ -92,11 +97,16 @@
       "path": "bin/dropbearkey",
       "sha256": "98e0b943f5ceea58a4403fa22de55891542ebef89d5b45cb7e748309d3631a6a",
       "size": 337528
+    },
+    {
+      "path": "bin/remote-ui",
+      "sha256": "6cc30a57175facb0020fe48affb4126990dbf9814e1b826856748f138b70047a",
+      "size": 14248
     }
   ],
   "release_asset": {
-    "name": "trimui-remote-v0.4.0.zip",
-    "sha256": "fda2823f0bca682ed41cc063293f57a5d0c00887c8f599dfd3db4113cc7492b6",
-    "size": 802436
+    "name": "trimui-remote-v0.5.0.zip",
+    "sha256": "c84574de216ef159d6da837b4f840dca06c13877ca7664dfc219f4b12c873084",
+    "size": 1187360
   }
 }
