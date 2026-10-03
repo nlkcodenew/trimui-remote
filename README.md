@@ -52,11 +52,11 @@ sh /mnt/SDCARD/Apps/TrimuiRemote/remote.sh status
 sh /mnt/SDCARD/Apps/TrimuiRemote/remote.sh stop
 ```
 
-## Dùng SSH qua Internet bằng VPS (chính, đã dựng sẵn)
+## Dùng SSH qua Internet bằng VPS (chính)
 
-Máy game tự mở reverse-tunnel về VPS jump-host (giống hệt cách `YOUR_OTHER_HOST` của bạn
-đang chạy: laptop giữ port `OTHER_HOST_PORT`, Brick Pro giữ port **`22223`**).
-App đã cấu hình sẵn, không cần sửa gì.
+Máy game tự mở reverse-tunnel về VPS jump-host của bạn (máy giữ một port riêng
+`VPS_RPORT` trên VPS, cấu hình trong `files/tunnel.conf`).
+Điền VPS của bạn vào `tunnel.conf` trước khi đóng gói, không cần sửa gì thêm.
 
 Trên máy (trong Trimui Terminal, sau khi đã bật app):
 
@@ -64,7 +64,7 @@ Trên máy (trong Trimui Terminal, sau khi đã bật app):
 sh /mnt/SDCARD/Apps/TrimuiRemote/tunnel.sh status
 ```
 
-Từ **bất kỳ PC nào** (cần có key `YOUR_JUMP_HOST` như máy này), thêm đoạn trong
+Từ **bất kỳ PC nào** (cần truy cập được VPS jump-host), thêm đoạn trong
 `pc-ssh-config.txt` vào `%USERPROFILE%\.ssh\config` rồi chạy:
 
 ```sh

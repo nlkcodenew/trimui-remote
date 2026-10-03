@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Dung VPS jump-host cho Trimui-Remote (chay tren PC dev, KHONG chay tren may game).
-- Tao user han che `trimui` (khoa password, chi login bang key rieng).
-- Nap public-key tunnel voi gioi han: chi duoc reverse-forward
-  127.0.0.1:22223 (permitlisten), cam pty/agent/X11.
-- Kiem tra key login + reverse-forward that.
+"""Set up a VPS jump-host for Trimui-Remote (runs on the dev PC, NOT on the device).
+- Creates a restricted `trimui` user (locked password, login by dedicated key only).
+- Installs the tunnel public key restricted to one reverse-forward
+  (permitlisten on a single port), no pty/agent/X11.
+- Verifies key login + a real reverse-forward.
 
-Dung:
-  python3 tools/setup_vps.py --pem PATH_TO_YOUR_PEM --pub <file.pub> [--host YOUR_VPS_IP] [--user ubuntu] [--rport 22223]
-Khoa PEM goc KHONG bao gio copy len may game.
+Usage:
+  python3 tools/setup_vps.py --pem <path-to-your-pem> --pub <file.pub> --host <YOUR_VPS_IP>
+Never copy your PEM to the Trimui device.
 """
 import argparse
 import subprocess
@@ -22,7 +22,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pem", required=True)
     ap.add_argument("--pub", required=True)
-    ap.add_argument("--host", default="YOUR_VPS_IP")
+    ap.add_argument("--host", required=True)
     ap.add_argument("--user", default="ubuntu")
     ap.add_argument("--tuser", default="trimui")
     ap.add_argument("--rport", default="22223")

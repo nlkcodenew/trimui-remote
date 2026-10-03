@@ -9,3 +9,12 @@ __pycache__/
 Remote-ip.txt
 # Khoa tunnel rieng cua may game: chi nam trong ZIP release, khong commit len git.
 files/tunnel_key
+# Config that chua thong tin VPS that (neu user copy ve files/ khi build).
+files/tunnel.conf
+# Khoa/ban nhan dang: khong bao gio commit.
+*.pem
+*.ppk
+*.key
+id_*
+*_rsa
+*_ed25519
