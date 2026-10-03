@@ -48,7 +48,29 @@ sh /mnt/SDCARD/Apps/TrimuiRemote/remote.sh status
 sh /mnt/SDCARD/Apps/TrimuiRemote/remote.sh stop
 ```
 
-## Dùng SSH qua Internet bằng Pinggy (để test, không cần VPS)
+## Dùng SSH qua Internet bằng VPS (chính, đã dựng sẵn)
+
+Máy game tự mở reverse-tunnel về VPS jump-host (giống hệt cách `YOUR_OTHER_HOST` của bạn
+đang chạy: laptop giữ port `OTHER_HOST_PORT`, Brick Pro giữ port **`22223`**).
+App đã cấu hình sẵn, không cần sửa gì.
+
+Trên máy (trong Trimui Terminal, sau khi đã bật app):
+
+```sh
+sh /mnt/SDCARD/Apps/TrimuiRemote/tunnel.sh status
+```
+
+Từ **bất kỳ PC nào** (cần có key `YOUR_JUMP_HOST` như máy này), thêm đoạn trong
+`pc-ssh-config.txt` vào `%USERPROFILE%\.ssh\config` rồi chạy:
+
+```sh
+ssh trimui-brick
+```
+
+- User: `root` — Pass: mật khẩu root của máy game.
+- Không cần cùng mạng, chỉ cần máy game có Internet lúc mở app.
+
+## Dùng Pinggy khi chưa muốn qua VPS (dự phòng)
 
 Máy game và PC hỗ trợ **không cần cùng mạng**, chỉ cần cả hai đều có Internet.
 
@@ -81,20 +103,12 @@ Lưu ý của bản test:
 
 Chi tiết kỹ thuật: xem `docs/TUNNEL_PINGGY.md`.
 
-## Dùng VPS sau này (khi bạn đã có VPS)
+## Dùng Pinggy khi chưa muốn qua VPS (dự phòng)
 
-Sửa file `Apps/TrimuiRemote/data/tunnel.conf`:
+Đổi `MODE=pinggy` trong `data/tunnel.conf` rồi `sh tunnel.sh restart`. Còn lại
+giữ nguyên các bước như mục Pinggy cũ dưới đây.
 
-```sh
-MODE=vps
-VPS_HOST=203.0.113.10
-VPS_PORT=22
-VPS_USER=root
-VPS_RPORT=12222
-```
-
-Rồi chạy `sh tunnel.sh start`. Dev kết nối: `ssh -p 12222 root@203.0.113.10`
-(thực chất là vào thẳng máy game). Port `12222` cố định, không đổi như Pinggy.
+## Dùng SSH qua Internet bằng Pinggy (test nhanh, không cần VPS)
 
 ## Thu log debug (1 lệnh duy nhất)
 

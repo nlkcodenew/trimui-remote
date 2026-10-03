@@ -1,11 +1,11 @@
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "app": "trimui-remote",
-  "built": "2026-10-03T08:29:26+07:00",
+  "built": "2026-10-03T08:56:36+07:00",
   "files": [
     {
       "path": "VERSION",
-      "sha256": "1f930dd1f133c1f97a94fe3acb8db34372cf4c01ffdb2b3ff4ca72f9494121e9",
+      "sha256": "d915cc95d6ca8f47ae297713ed46d4e5c5d99ddd29fc3c61e263bdf305f2b5b0",
       "size": 6
     },
     {
@@ -25,8 +25,8 @@
     },
     {
       "path": "launch.sh",
-      "sha256": "96704604935e602a9ff704479319062394f86610e9ec430a6828efbd1ba14a79",
-      "size": 1172
+      "sha256": "54dff6ba3a03b4808657e2c1e2f1977a1ac93dca43d543afb670584a39361602",
+      "size": 2042
     },
     {
       "path": "net-survey.sh",
@@ -44,24 +44,59 @@
       "size": 3890
     },
     {
+      "path": "show-status.sh",
+      "sha256": "8f072b5612c2573b5507e990d47734db88c6be9015f032173b5004ca9dae557a",
+      "size": 2320
+    },
+    {
+      "path": "tunnel.conf",
+      "sha256": "1cd61665e406d17da14008025f39debfdd9c7aea378d7a0fdd7b14e0dd060366",
+      "size": 480
+    },
+    {
       "path": "tunnel.conf.example",
       "sha256": "0343e86879dac4eb069c17a1d197f1abba083345d7664321e52b50ad1e5d4cc6",
       "size": 513
     },
     {
       "path": "tunnel.sh",
-      "sha256": "965f0e2b6c7b00c38a49e85e5eb225e8ad956304414bff436080a49d7a34c634",
-      "size": 5811
+      "sha256": "976482a9866bfeb5edb4f682e4b8e0dcd80f0b5468f063d9c60b2ed656e446dc",
+      "size": 6729
+    },
+    {
+      "path": "tunnel_key",
+      "sha256": "eb53f351c558d95e373ad4c540493b8a388e03fc24ac6515d4723167f3d62d04",
+      "size": 387
     },
     {
       "path": "bin/README.txt",
-      "sha256": "ecae392dc097994de9e327091ab9f667a3021743d63654b66a1a0355e459bb9c",
-      "size": 1834
+      "sha256": "b576e019f8971604bf8fd5784bfe3d56fc71e0d6fc4023132a16bc7a02730751",
+      "size": 2050
+    },
+    {
+      "path": "bin/dbclient",
+      "sha256": "b317ecf2e0d06c87350eecea880f51895f4d64373f16023e38418576dcb14081",
+      "size": 429304
+    },
+    {
+      "path": "bin/dropbear",
+      "sha256": "ea7b2b498191cb4706f9f9bd5335fbdef5f37c0e1af7b59d8540ea4aa4bf9258",
+      "size": 475208
+    },
+    {
+      "path": "bin/dropbearconvert",
+      "sha256": "09d1dcd400c1598418c03596c3fc800c3e942cadcbd0ce5d0d2af3b299dfbcc2",
+      "size": 344384
+    },
+    {
+      "path": "bin/dropbearkey",
+      "sha256": "98e0b943f5ceea58a4403fa22de55891542ebef89d5b45cb7e748309d3631a6a",
+      "size": 337528
     }
   ],
   "release_asset": {
-    "name": "trimui-remote-v0.2.0.zip",
-    "sha256": "42a96f111fd88939413176e9462f3c5042aba1d03339a87b786b096d9804479c",
-    "size": 18612
+    "name": "trimui-remote-v0.3.0.zip",
+    "sha256": "4f2cbc28000d0d1cffcf456343fe7cfe018521ce81d4cfcc6efeb9ed085784da",
+    "size": 802702
   }
 }

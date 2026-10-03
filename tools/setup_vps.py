@@ -50,7 +50,7 @@ def main():
         "id {tu} >/dev/null 2>&1 || sudo useradd -m -s /bin/bash -p '!' {tu}; "
         "sudo -u {tu} mkdir -p /home/{tu}/.ssh; sudo chmod 700 /home/{tu}/.ssh; "
         "PUB=$(cat /tmp/trimui-tunnel.pub); "
-        "printf '%s' \"no-pty,no-agent-forwarding,no-X11-forwarding,permitlisten=\\\"127.0.0.1:{rp}\\\" $PUB\" "
+        "printf '%s' \"no-pty,no-agent-forwarding,no-X11-forwarding,permitlisten=\\\"{rp}\\\" $PUB\" "
         "| sudo tee /home/{tu}/.ssh/authorized_keys >/dev/null; "
         "sudo chmod 600 /home/{tu}/.ssh/authorized_keys; "
         "sudo chown -R {tu}:{tu} /home/{tu}/.ssh; rm -f /tmp/trimui-tunnel.pub; "

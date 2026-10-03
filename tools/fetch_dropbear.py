@@ -43,6 +43,7 @@ def main():
     data = api("/repos/%s/%s/actions/artifacts?per_page=30" % (OWNER, REPO), tok)
     arts = [a for a in data.get("artifacts", [])
             if a.get("name") == ARTIFACT and not a.get("expired")]
+    arts.sort(key=lambda a: a.get("updated_at", ""), reverse=True)
     if not arts:
         print("FAIL: chua co artifact %s (cho workflow dropbear-static chay xong)" % ARTIFACT)
         return 1
@@ -63,12 +64,12 @@ def main():
     with zipfile.ZipFile(io.BytesIO(blob)) as z:
         for n in z.namelist():
             base = os.path.basename(n)
-            if base in ("dropbear", "dbclient", "dropbearkey") and base == n.strip("/").split("/")[-1]:
+            if base in ("dropbear", "dbclient", "dropbearkey", "dropbearconvert") and base == n.strip("/").split("/")[-1]:
                 with z.open(n) as src, open(os.path.join(bindir, base), "wb") as dst:
                     dst.write(src.read())
                 print("wrote files/bin/%s" % base)
     # chmod +x de ZIP giu quyen (make_release danh dau bin/ la executable).
-    for b in ("dropbear", "dbclient", "dropbearkey"):
+    for b in ("dropbear", "dbclient", "dropbearkey", "dropbearconvert"):
         p = os.path.join(bindir, b)
         if os.path.isfile(p):
             os.chmod(p, 0o755)
