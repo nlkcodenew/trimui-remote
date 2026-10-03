@@ -21,6 +21,8 @@ EXCLUDE_NAMES = {"__pycache__", ".update_staging", "data"}
 EXCLUDE_FILES = {"desktop.ini", ".DS_Store", "tunnel.conf"}
 # tunnel.conf that chua thong tin VPS that (neu co) - KHONG dong goi, KHONG commit.
 # May game tu dung tunnel.conf.example (pinggy mac dinh) khi thieu file nay.
+# tunnel_key (private key): KHONG BAO GIO ship trong ZIP public - nap tay qua scp.
+EXCLUDE_FILES |= {"tunnel_key"}
 RUNTIME_PREFIXES = ("Remote-launcher.log", "Remote-ota.log", "Remote-debug.log",
                     "Net-survey-", "debug-")
 LF_EXTS = {".json", ".md", ".py", ".sh", ".txt", ".cmake", ".yml", ".yaml"}

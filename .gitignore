@@ -18,3 +18,9 @@ files/tunnel.conf
 id_*
 *_rsa
 *_ed25519
+# Rac he dieu hanh / secret thuong gap.
+.DS_Store
+Thumbs.db
+.env*
+credentials*
+secrets/

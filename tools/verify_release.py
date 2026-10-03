@@ -90,6 +90,8 @@ def main():
         check(not any("secrets" in n for n in names), "ZIP khong chua secret")
         check("Apps/TrimuiRemote/tunnel.conf" not in names,
               "ZIP khong ship tunnel.conf that (OTA an toan)")
+        check("Apps/TrimuiRemote/tunnel_key" not in names,
+              "ZIP khong ship private key (nap tay qua scp)")
     else:
         print("SKIP kiem tra ZIP (chua chay make_release.py)")
     if WARN:

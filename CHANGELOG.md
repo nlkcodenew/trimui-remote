@@ -1,5 +1,12 @@
 # Changelog — Trimui-Remote
 
+## v0.8.1
+
+- **Không ship private key trong ZIP public**: `tunnel_key` loại khỏi đóng gói
+  (kèm `tunnel.conf` đã loại ở bản dọn public). Nạp key bằng tay một lần qua
+  `scp` vào `data/` (sống sót qua OTA). Kèm xoay key mới trên VPS sau khi phát
+  hiện key cũ lọt vào asset release v0.8.0.
+
 ## v0.8.0
 
 - **Chữ có dấu đầy đủ** trên màn hình app và file `STATUS.txt` (font DejaVu đã có

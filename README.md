@@ -76,6 +76,19 @@ ssh trimui-brick
 - User: `root` — Pass: mật khẩu root của máy game.
 - Không cần cùng mạng, chỉ cần máy game có Internet lúc mở app.
 
+### Nạp key tunnel cho máy (một lần duy nhất)
+
+ZIP public **không kèm private key**. Sau khi cài app, chép key vào máy
+(qua thẻ nhớ hoặc `scp`), rồi mở app:
+
+```sh
+scp tunnel_key root@<IP-MAY>:/mnt/SDCARD/Apps/TrimuiRemote/data/tunnel_key
+ssh root@<IP-MAY> -p 2222 "chmod 600 /mnt/SDCARD/Apps/TrimuiRemote/data/tunnel_key"
+```
+
+Key nằm trong `data/` nên sống sót qua OTA. Mất key thì tunnel không nối được
+(xem `tunnel.sh log` trên máy).
+
 ## Dùng Pinggy khi chưa muốn qua VPS (dự phòng)
 
 Máy game và PC hỗ trợ **không cần cùng mạng**, chỉ cần cả hai đều có Internet.
