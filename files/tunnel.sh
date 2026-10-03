@@ -82,8 +82,9 @@ cmd_endpoint() {
   show_endpoint
 }
 build_cmd() {
-  # $1 = kieu client (dbclient|ssh). In cau lenh tunnel ra stdout.
-  c="$1"
+  # $1 = kieu client (dbclient|ssh), $2 = duong dan binary day du. In cau lenh ra stdout.
+  c="$1"; CBIN="$2"
+  [ -n "$CBIN" ] || CBIN="$c"
   # Khoa tunnel: dbclient (dropbear) khong doc duoc OpenSSH PEM -> convert 1 lan.
   KEYARG=""
   if [ "$MODE" = "vps" ] || [ "$MODE" = "pinggy" ]; then
@@ -105,16 +106,16 @@ build_cmd() {
   if [ "$MODE" = "vps" ]; then
     [ -n "$VPS_HOST" ] || { echo "chua cau hinh VPS trong $CONF" >&2; return 1; }
     if [ "$c" = "dbclient" ]; then
-      echo "dbclient -p $VPS_PORT -R $VPS_RPORT:localhost:$PORT -N -T -y -K 30 $KEYARG $VPS_USER@$VPS_HOST"
+      echo "$CBIN -p $VPS_PORT -R $VPS_RPORT:localhost:$PORT -N -T -y -K 30 $KEYARG $VPS_USER@$VPS_HOST"
     else
-      echo "ssh -p $VPS_PORT -R $VPS_RPORT:localhost:$PORT -N -T -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ExitOnForwardFailure=yes $KEYARG $VPS_USER@$VPS_HOST"
+      echo "$CBIN -p $VPS_PORT -R $VPS_RPORT:localhost:$PORT -N -T -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ExitOnForwardFailure=yes $KEYARG $VPS_USER@$VPS_HOST"
     fi
   else
     # Pinggy TCP tunnel: Pinggy tu cap port cong cong ngau nhien (-R0).
     if [ "$c" = "dbclient" ]; then
-      echo "dbclient -p $PINGGY_PORT -R 0:localhost:$PORT -N -T -y -K 30 $PINGGY_USER@$PINGGY_HOST"
+      echo "$CBIN -p $PINGGY_PORT -R 0:localhost:$PORT -N -T -y -K 30 $KEYARG $PINGGY_USER@$PINGGY_HOST"
     else
-      echo "ssh -p $PINGGY_PORT -R 0:localhost:$PORT -N -T -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ExitOnForwardFailure=yes $PINGGY_USER@$PINGGY_HOST"
+      echo "$CBIN -p $PINGGY_PORT -R 0:localhost:$PORT -N -T -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ExitOnForwardFailure=yes $KEYARG $PINGGY_USER@$PINGGY_HOST"
     fi
   fi
 }
@@ -148,17 +149,16 @@ cmd_start() {
     cp "$APP/tunnel_key" "$DATA/tunnel_key" 2>/dev/null
     chmod 600 "$DATA/tunnel_key" 2>/dev/null
   fi
-  TUNCMD="$(build_cmd "$ctype")" || return 1
-  # Dung binary trong app theo duong dan tuyet doi (PATH luc chay nen thieu).
-  case "$ctype" in
-    dbclient)
-      if [ -x "$APP/bin/dbclient" ]; then
-        TUNCMD="$APP/bin/${TUNCMD#dbclient }"
-      elif [ -x "$cbin" ] && [ "$cbin" != "dbclient" ]; then
-        TUNCMD="$cbin/${TUNCMD#dbclient }"
-      fi
-      ;;
-  esac
+  # Duong dan binary day du (PATH luc chay nen thieu) - truyen thang vao lenh,
+  # khong thay the chuoi sau (tung lam mat ten binary).
+  if [ "$ctype" = "dbclient" ] && [ -x "$APP/bin/dbclient" ]; then
+    CBIN="$APP/bin/dbclient"
+  elif [ "$ctype" = "dbclient" ] && [ -x "$cbin" ] && [ "$cbin" != "dbclient" ]; then
+    CBIN="$cbin"
+  else
+    CBIN="$ctype"
+  fi
+  TUNCMD="$(build_cmd "$ctype" "$CBIN")" || return 1
   cat > "$LOOPF" <<EOF
 #!/bin/sh
 # tunnel-loop v$CURVER - tu sinh boi tunnel.sh - dung sua tay

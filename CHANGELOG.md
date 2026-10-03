@@ -1,5 +1,11 @@
 # Changelog — Trimui-Remote
 
+## v0.6.1
+
+- Sửa lỗi `.../bin/-p: not found` (thấy trên ảnh chụp log): dựng lệnh tunnel bằng
+  cách thay thế chuỗi đã làm mất tên binary `dbclient`. Nay truyền đường dẫn
+  binary đầy đủ (`$APP/bin/dbclient`) thẳng vào lệnh từ đầu.
+
 ## v0.6.0
 
 - **Đổi cách tiếp cận mở app**: bỏ OTA foreground + tự restart (chờ tới 60 giây

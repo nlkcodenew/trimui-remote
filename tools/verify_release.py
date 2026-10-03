@@ -55,6 +55,8 @@ def main():
     for kw in ("PINGGY_HOST", "tunnel-loop", "MODE=vps", "VPS_RPORT"):
         check(kw in t, "tunnel.sh chua %s" % kw)
     check('ctype="${PC##*|}"' in t, "tunnel.sh tach loai client dung (##*|)")
+    check("CBIN" in t and 'build_cmd "$ctype" "$CBIN"' in t, "tunnel.sh truyen duong dan binary truc tiep")
+    check("${TUNCMD#dbclient" not in t, "tunnel.sh khong thay the chuoi binary (tung lam mat ten)")
     check(t.index("tunnel_key") < t.index('TUNCMD="$(build_cmd'), "tunnel.sh nap key TRUOC khi build lenh")
     check("tunnel-loop v$CURVER" in t, "tunnel.sh danh dau version loop (huy loop cu)")
     check("tailscale" not in t.lower(), "tunnel.sh khong keo Tailscale (giu nhe)")
