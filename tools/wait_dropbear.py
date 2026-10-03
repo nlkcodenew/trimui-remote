@@ -39,12 +39,26 @@ def main():
     if not tok:
         print("FAIL: khong lay duoc token")
         return 1
+    base = 0
     for i in range(27):
-        data = api("/repos/%s/%s/actions/runs?per_page=5" % (OWNER, REPO), tok)
+        data = api("/repos/%s/%s/actions/runs?per_page=10" % (OWNER, REPO), tok)
         runs = data.get("workflow_runs", []) if isinstance(data, dict) else []
         cand = [r for r in runs if WF in (r.get("name", ""))]
         cand.sort(key=lambda r: r.get("run_number", 0), reverse=True)
-        run = cand[0] if cand else None
+        if i == 0 and cand:
+            base = cand[0].get("run_number", 0)
+        new = [r for r in cand if r.get("run_number", 0) > base]
+        run = new[0] if new else None
+        if run is None:
+            # chua co run moi: theo run dang chay neu co, khong thi doi
+            running = [r for r in cand if r.get("status") != "completed"]
+            if running:
+                run = running[0]
+                print("theo run dang chay %s status=%s" % (run.get("id"), run.get("status")))
+            else:
+                print("doi run moi (baseline %s)..." % base)
+            time.sleep(20)
+            continue
         if run:
             print("run %s status=%s conclusion=%s" % (run.get("id"), run.get("status"), run.get("conclusion")))
             if run.get("status") == "completed":
