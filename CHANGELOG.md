@@ -1,5 +1,14 @@
 # Changelog — Trimui-Remote
 
+## v0.6.0
+
+- **Đổi cách tiếp cận mở app**: bỏ OTA foreground + tự restart (chờ tới 60 giây
+  khiến launcher tưởng app treo nên diệt — nhìn như crash, trong khi chạy tay
+  thì bình thường). OTA trở lại chạy **nền** như bản cũ: mở app lên màn hình ngay,
+  có bản mới thì lần mở sau dùng.
+- Giữ nguyên toàn bộ sửa lỗi tunnel (dbclient, nạp key, hủy loop cũ), chờ dropbear
+  8 giây, tự `chmod +x`, xoay log, màn hình chữ to, thoát B có panel giữa.
+
 ## v0.5.4
 
 - Tự chữa mất quyền thực thi: `launch.sh` tự `chmod +x` cho `bin/*` và `*.sh`

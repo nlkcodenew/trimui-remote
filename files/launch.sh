@@ -1,8 +1,7 @@
 #!/bin/sh
-# Trimui-Remote launcher v0.5.
-# Mo app -> OTA nen ban moi (repo da public) -> tu restart chay ban moi ->
-# bat SSH LAN + tunnel Internet -> hien man hinh huong dan -> B de thoat
-# (dich vu van chay nen).
+# Trimui-Remote launcher v0.6: mo NHANH, khong treo menu.
+# Bai hoc v0.5.3: OTA foreground (doi toi 60s) lam launcher tuong app treo
+# -> diet app (nhin nhu crash). OTA tro lai chay NEN nhu cu.
 case "$0" in */*) cd "$(dirname "$0")" || exit 1;; esac
 APP="$(pwd)"
 SDCARD_PATH="${SDCARD_PATH:-/mnt/SDCARD}"
@@ -13,23 +12,13 @@ VER="$(cat "$APP/VERSION" 2>/dev/null | tr -d ' \r\n')"
 # Tu chua quyen thuc thi (the nho FAT khong giu +x, copy tay co the mat).
 chmod +x "$APP"/bin/* "$APP"/*.sh 2>/dev/null
 
-# 1. OTA chay TRUOC (foreground, toi da 60s). Co ban moi -> restart app 1 lan
-# de chay code moi ngay, khong can mo app 2 lan. Tat bang REMOTE_NO_OTA=1.
-if [ "$REMOTE_RESTARTED" != "1" ] && [ "$REMOTE_NO_OTA" != "1" ] && [ -x "$APP/ota-update.sh" ]; then
+# 1. OTA chay NEN (khong chan mo app). Co ban moi thi lan mo sau se dung.
+# Tat bang REMOTE_NO_OTA=1.
+if [ "$REMOTE_NO_OTA" != "1" ] && [ -x "$APP/ota-update.sh" ]; then
   if command -v timeout >/dev/null 2>&1; then
-    timeout 60 sh "$APP/ota-update.sh" --apply >> "$APP/Remote-ota.log" 2>&1
-    CODE=$?
+    timeout 90 sh "$APP/ota-update.sh" --apply >> "$APP/Remote-ota.log" 2>&1 &
   else
-    sh "$APP/ota-update.sh" --apply >> "$APP/Remote-ota.log" 2>&1
-    CODE=$?
-  fi
-  # ota-update.sh exit 0 = vua len ban moi.
-  if [ "$CODE" = "0" ]; then
-    echo "OTA len ban moi, khoi dong lai app..." >> "$LOG" 2>&1
-    sh "$APP/remote.sh" stop >> "$LOG" 2>&1
-    sh "$APP/tunnel.sh" stop >> "$LOG" 2>&1
-    export REMOTE_RESTARTED=1
-    exec sh "$APP/launch.sh"
+    sh "$APP/ota-update.sh" --apply >> "$APP/Remote-ota.log" 2>&1 &
   fi
 fi
 

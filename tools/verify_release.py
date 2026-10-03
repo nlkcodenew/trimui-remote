@@ -62,8 +62,9 @@ def main():
     for kw in ("wait_endpoint", "STATUS.txt", "Pinggy"):
         check(kw in s, "show-status.sh chua %s" % kw)
     l = open(os.path.join(ROOT, "files", "launch.sh"), encoding="utf-8", errors="replace").read()
-    for kw in ("show-status.sh", "REMOTE_RESTARTED", "remote-ui", "timeout 60"):
+    for kw in ("show-status.sh", "remote-ui", "timeout 90"):
         check(kw in l, "launch.sh chua %s" % kw)
+    check("REMOTE_RESTARTED" not in l, "launch.sh khong restart foreground (mo nhanh v0.6)")
     check("TrimuiTerminal" not in l, "launch.sh khong phu thuoc Terminal (UI rieng v0.5)")
     check(os.path.isfile(os.path.join(ROOT, "files", "assets", "font.ttf")),
           "assets/font.ttf ton tai (chu Viet co dau)")
