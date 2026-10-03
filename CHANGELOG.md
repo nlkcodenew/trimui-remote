@@ -1,5 +1,15 @@
 # Changelog — Trimui-Remote
 
+## v0.4.0
+
+- **Bỏ màn hình terminal khỏi app (chạy ẩn hoàn toàn)**: đúng mục đích “PC remote vào
+  đọc log, không gõ gì trên máy” nên không cần bàn phím ảo, không cần đọc chữ nhỏ.
+  Mở app là bật dịch vụ + thoát ngay; endpoint VPS là **cố định** nên dev không cần
+  nhìn màn hình máy.
+- Sửa lỗi `ssh trimui-brick` báo “No such host”: do block Host chưa được chép vào
+  `.ssh/config` trên PC (đã chép sẵn, file `pc-ssh-config.txt` chỉ còn để tham khảo).
+- `STATUS.txt` vẫn ghi ra cạnh app để đọc qua thẻ nhớ khi cần debug.
+
 ## v0.3.0
 
 - **Sửa crash khi mở app**: nguyên nhân là stock OS không có sẵn `dropbear` mà app

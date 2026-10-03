@@ -59,8 +59,9 @@ def main():
     for kw in ("wait_endpoint", "STATUS.txt", "Pinggy"):
         check(kw in s, "show-status.sh chua %s" % kw)
     l = open(os.path.join(ROOT, "files", "launch.sh"), encoding="utf-8", errors="replace").read()
-    for kw in ("show-status.sh", "REMOTE_OTA", "TrimuiTerminal"):
+    for kw in ("show-status.sh", "REMOTE_OTA", "remote.sh"):
         check(kw in l, "launch.sh chua %s" % kw)
+    check("TrimuiTerminal" not in l, "launch.sh khong phu thuoc Terminal (chay an v0.4)")
     # Binary: BAT BUOC tu v0.3 (stock OS khong co san dropbear).
     for b in ("bin/dropbear", "bin/dbclient", "bin/dropbearkey", "bin/dropbearconvert"):
         p = os.path.join(ROOT, "files", b)
