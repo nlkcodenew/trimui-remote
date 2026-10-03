@@ -1,5 +1,12 @@
 # Changelog — Trimui-Remote
 
+## v0.5.4
+
+- Tự chữa mất quyền thực thi: `launch.sh` tự `chmod +x` cho `bin/*` và `*.sh`
+  mỗi lần mở (thẻ nhớ FAT không giữ quyền file, chép tay có thể mất).
+- Xoay `tunnel.log`: chỉ giữ 200 dòng cuối mỗi lần mở tunnel, tránh file phình
+  to vô hạn trên thẻ nhớ.
+
 ## v0.5.3
 
 - Tự hủy tunnel-loop của bản cũ khi mở app bản mới (loop cũ giữ lệnh `ssh` sai nên

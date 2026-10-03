@@ -10,6 +10,9 @@ export SDCARD_PATH
 LOG="$APP/Remote-launcher.log"
 VER="$(cat "$APP/VERSION" 2>/dev/null | tr -d ' \r\n')"
 
+# Tu chua quyen thuc thi (the nho FAT khong giu +x, copy tay co the mat).
+chmod +x "$APP"/bin/* "$APP"/*.sh 2>/dev/null
+
 # 1. OTA chay TRUOC (foreground, toi da 60s). Co ban moi -> restart app 1 lan
 # de chay code moi ngay, khong can mo app 2 lan. Tat bang REMOTE_NO_OTA=1.
 if [ "$REMOTE_RESTARTED" != "1" ] && [ "$REMOTE_NO_OTA" != "1" ] && [ -x "$APP/ota-update.sh" ]; then

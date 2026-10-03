@@ -172,6 +172,10 @@ EOF
   chmod +x "$LOOPF" 2>/dev/null
   rm -f "$PIDF"
   : >> "$TLOG" 2>/dev/null
+  # Xoay log: giu 200 dong cuoi, tranh tunnel.log phi`nh to vo han tren the nho.
+  if [ -f "$TLOG" ] && command -v tail >/dev/null 2>&1; then
+    tail -n 200 "$TLOG" > "$TLOG.tmp" 2>/dev/null && mv "$TLOG.tmp" "$TLOG" 2>/dev/null
+  fi
   if command -v setsid >/dev/null 2>&1; then
     setsid nohup sh "$LOOPF" >> "$TLOG" 2>&1 &
   else
