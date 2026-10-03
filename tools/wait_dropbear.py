@@ -41,13 +41,9 @@ def main():
     for i in range(27):
         data = api("/repos/%s/%s/actions/runs?per_page=5" % (OWNER, REPO), tok)
         runs = data.get("workflow_runs", []) if isinstance(data, dict) else []
-        run = None
-        for r in runs:
-            if r.get("name") == "dropbear-static" or "dropbear" in (r.get("name", "")):
-                run = r
-                break
-        if run is None and runs:
-            run = runs[0]
+        cand = [r for r in runs if "dropbear" in (r.get("name", ""))]
+        cand.sort(key=lambda r: r.get("run_number", 0), reverse=True)
+        run = cand[0] if cand else None
         if run:
             print("run %s status=%s conclusion=%s" % (run.get("id"), run.get("status"), run.get("conclusion")))
             if run.get("status") == "completed":

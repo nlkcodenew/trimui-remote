@@ -18,7 +18,9 @@ PORT="${REMOTE_PORT:-2222}"
 
 mkdir -p "$DATA" 2>/dev/null
 if [ ! -f "$CONF" ]; then
-  if [ -f "$APP/tunnel.conf.example" ]; then
+  if [ -f "$APP/tunnel.conf" ]; then
+    cp "$APP/tunnel.conf" "$CONF" 2>/dev/null
+  elif [ -f "$APP/tunnel.conf.example" ]; then
     cp "$APP/tunnel.conf.example" "$CONF" 2>/dev/null
   else
     printf 'MODE=pinggy\n' > "$CONF" 2>/dev/null
@@ -82,10 +84,26 @@ cmd_endpoint() {
 build_cmd() {
   # $1 = kieu client (dbclient|ssh). In cau lenh tunnel ra stdout.
   c="$1"
+  # Khoa tunnel: dbclient (dropbear) khong doc duoc OpenSSH PEM -> convert 1 lan.
+  KEYARG=""
+  if [ "$MODE" = "vps" ] || [ "$MODE" = "pinggy" ]; then
+    KEY="$DATA/tunnel_key"
+    if [ -f "$KEY" ]; then
+      chmod 600 "$KEY" 2>/dev/null
+      if [ "$c" = "dbclient" ] && head -n 1 "$KEY" 2>/dev/null | grep -q OPENSSH; then
+        if [ -x "$APP/bin/dropbearconvert" ]; then
+          "$APP/bin/dropbearconvert" openssh dropbear "$KEY" "$DATA/tunnel_key.db" >> "$TLOG" 2>&1 \
+            && chmod 600 "$DATA/tunnel_key.db" 2>/dev/null \
+            && KEY="$DATA/tunnel_key.db"
+        else
+          echo "key OpenSSH nhung thieu dropbearconvert (client dbclient)" >> "$TLOG" 2>&1
+        fi
+      fi
+      KEYARG="-i $KEY"
+    fi
+  fi
   if [ "$MODE" = "vps" ]; then
     [ -n "$VPS_HOST" ] || { echo "chua cau hinh VPS trong $CONF" >&2; return 1; }
-    KEYARG=""
-    [ -f "$DATA/tunnel_key" ] && KEYARG="-i $DATA/tunnel_key"
     if [ "$c" = "dbclient" ]; then
       echo "dbclient -p $VPS_PORT -R $VPS_RPORT:localhost:$PORT -N -T -y -K 30 $KEYARG $VPS_USER@$VPS_HOST"
     else

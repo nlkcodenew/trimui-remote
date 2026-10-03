@@ -7,3 +7,5 @@ __pycache__/
 .ota-status
 .ota-status.tmp
 Remote-ip.txt
+# Khoa tunnel rieng cua may game: chi nam trong ZIP release, khong commit len git.
+files/tunnel_key

@@ -62,7 +62,7 @@ def main():
     for kw in ("show-status.sh", "REMOTE_OTA", "TrimuiTerminal"):
         check(kw in l, "launch.sh chua %s" % kw)
     # Binary: BAT BUOC tu v0.3 (stock OS khong co san dropbear).
-    for b in ("bin/dropbear", "bin/dbclient", "bin/dropbearkey"):
+    for b in ("bin/dropbear", "bin/dbclient", "bin/dropbearkey", "bin/dropbearconvert"):
         p = os.path.join(ROOT, "files", b)
         if os.path.isfile(p):
             with open(p, "rb") as h:

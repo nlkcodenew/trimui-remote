@@ -29,14 +29,14 @@ jobs:
           cd dropbear-2024.86
           export CC="zig cc -target aarch64-linux-musl"
           ./configure --host=aarch64-linux --disable-zlib --disable-syslog
-          make -j4 PROGRAMS="dropbear dbclient dropbearkey"
-          aarch64-linux-gnu-strip dropbear dbclient dropbearkey
-          file dropbear dbclient dropbearkey
+          make -j4 PROGRAMS="dropbear dbclient dropbearkey dropbearconvert"
+          aarch64-linux-gnu-strip dropbear dbclient dropbearkey dropbearconvert
+          file dropbear dbclient dropbearkey dropbearconvert
           # static that: khong co NEEDED dong
           test -z "$(readelf -d dropbear | grep NEEDED || true)"
-          ls -l dropbear dbclient dropbearkey
+          ls -l dropbear dbclient dropbearkey dropbearconvert
           mkdir -p "$GITHUB_WORKSPACE/out"
-          cp dropbear dbclient dropbearkey "$GITHUB_WORKSPACE/out/"
+          cp dropbear dbclient dropbearkey dropbearconvert "$GITHUB_WORKSPACE/out/"
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
