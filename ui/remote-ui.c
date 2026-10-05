@@ -483,13 +483,13 @@ int main(int argc, char **argv) {
         draw_text(f_body, "SSH qua Internet:", W / 2, y, 255, 255, 255); y += lh;
         if (vps_mode) {
             /* VPS: port co dinh, khong co tcp:// nhu Pinggy. */
-            draw_text(f_body, "VPS OK: tren PC chay: ssh trimui-brick", W / 2, y, 63, 185, 80); y += lh;
-            draw_text(f_small, "(user root, khong can cung mang)", W / 2, y, 160, 160, 160); y += lh;
+            draw_text(f_body, "VPS OK: trên PC chạy: ssh trimui-brick", W / 2, y, 63, 185, 80); y += lh;
+            draw_text(f_small, "(user root, không cần cùng mạng)", W / 2, y, 160, 160, 160); y += lh;
         } else if (ep_buf[0]) {
             char net[300];
             /* Pinggy: dia chi doi lien tuc. VPS: dung ssh trimui-brick tren PC. */
             if (strstr(ep_buf, "pinggy.io"))
-                snprintf(net, sizeof(net), "ssh root@%s  (port thay doi)", ep_buf + 6);
+                snprintf(net, sizeof(net), "ssh root@%s  (port thay đổi)", ep_buf + 6);
             else
                 snprintf(net, sizeof(net), "%s", ep_buf);
             /* cat bot neu qua dai so voi man hinh */

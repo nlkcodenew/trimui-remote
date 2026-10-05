@@ -1,5 +1,12 @@
 # Changelog — Trimui-Remote
 
+## v0.8.7
+
+- **Chữ tiếng Việt có dấu trên màn hình**: dòng chế độ VPS trước hiện
+  `VPS OK: tren PC chay: ssh trimui-brick` / `(user root, khong can cung mang)`
+  không dấu, giờ thành `VPS OK: trên PC chạy: ssh trimui-brick` /
+  `(user root, không cần cùng mạng)`. Sửa luôn `(port thay doi)` của Pinggy.
+
 ## v0.8.6
 
 - **Sửa lỗi mất SSH do mất `/tmp/stay_alive`** (đo trên máy thật): stock OS
