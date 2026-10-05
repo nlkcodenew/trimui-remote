@@ -1,5 +1,12 @@
 # Changelog — Trimui-Remote
 
+## v0.8.10
+
+- **Có `bin/dispctl` thật** (build bằng CI): `sh screen.sh off` / `sh screen.sh on`
+  giờ chạy được trên máy Brick Pro — tắt đèn nền khi đã B-thoát về menu mà vẫn
+  giữ SSH, không cần `python3` (firmware không có sẵn). Đây là bản đóng gói
+  kết thúc phần `dispctl` tồn đọng từ 0.8.5.
+
 ## v0.8.9
 
 - **Chống CDN cache làm OTA tưởng đã là bản mới nhất**: jsdelivr giữ
