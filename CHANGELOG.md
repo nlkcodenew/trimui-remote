@@ -1,5 +1,20 @@
 # Changelog — Trimui-Remote
 
+## v0.8.11
+
+- **Vì sao sau khi reboot là mất remote, và cách hết bị**: khi máy mất mạng rồi
+  reboot, phiên SSH cũ trên VPS không bị đóng (cùng IP, không ai đóng socket) nên
+  `sshd` vẫn giữ `VPS_RPORT`. Máy mở app lại thì không xin được port, chỉ báo
+  `Remote TCP forward request failed`, và không có gì tự giải phóng.
+  Đã thêm trên VPS `/etc/ssh/sshd_config.d/trimui-remote.conf`:
+  `ClientAliveInterval 60` + `ClientAliveCountMax 3` cho user `trimui`, nên phiên
+  chết tự bị rút sau khoảng 3 phút và máy vào lại được, không cần can thiệp.
+- **Lệnh chẩn đoán `sh tunnel.sh doctor`**: in ra tunnel có chạy không, port trên
+  VPS có bị giữ không, và đúng lệnh cần gõ trên VPS để gỡ.
+- **Log nói rõ nguyên nhân thay vì mơ hồ**: dòng cũ
+  `forward that bai (port VPS bi giu/trung RPORT?)` giờ ghi rõ đây là phiên treo
+  của chính máy này, kèm lệnh `ss -tlnp | grep <port>` và `sudo kill <PID>`.
+
 ## v0.8.10
 
 - **Có `bin/dispctl` thật** (build bằng CI): `sh screen.sh off` / `sh screen.sh on`

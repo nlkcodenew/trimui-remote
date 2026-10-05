@@ -85,6 +85,24 @@ cmd_endpoint() {
   [ -f "$TLOG" ] || return 1
   show_endpoint
 }
+cmd_doctor() {
+  # Tu chan doan: tunnel co that khong, va bi chan o dau.
+  echo "== MODE=$MODE VPS=$VPS_USER@$VPS_HOST:$VPS_PORT RPORT=$VPS_RPORT =="
+  p="$(running_pid)" && echo "1. loop: DANG CHAY (pid $p)" || echo "1. loop: KHONG CHAY (chua mo tunnel?)"
+  n="$(tail -n 60 "$TLOG" 2>/dev/null | grep -c 'Remote TCP forward request failed' 2>/dev/null)"
+  [ -n "$n" ] || n=0
+  if [ "$n" -gt 0 ] 2>/dev/null; then
+    echo "2. PORT $VPS_RPORT DANG BI GIU tren VPS (phien treo) - day la ly do khong remote duoc"
+    echo "   Sua tren VPS:"
+    echo "     ss -tlnp | grep $VPS_RPORT"
+    echo "     sudo kill <PID>"
+    echo "   sshd tren VPS da co ClientAliveInterval nen phien treo tu rut sau ~3 phut;"
+    echo "   dong app, cho 3 phut, mo lai la duoc. Hoac doi VPS_RPORT trong data/tunnel.conf."
+  else
+    echo "2. port tren VPS: khong bi chan"
+  fi
+  tail -n 8 "$TLOG" 2>/dev/null | sed 's/^/   /'
+}
 build_cmd() {
   # $1 = kieu client (dbclient|ssh), $2 = duong dan binary day du. In cau lenh ra stdout.
   c="$1"; CBIN="$2"
@@ -184,7 +202,9 @@ while :; do
     AFTER=\$(grep -c "Remote TCP forward request failed" "$TLOG" 2>/dev/null)
     [ -n "\$AFTER" ] || AFTER=0
     if [ "\$AFTER" != "\$BEFORE" ]; then
-      echo "--- forward that bai (port VPS bi giu/trung RPORT?), kill de thu lai" >> "$TLOG" 2>&1
+      echo "--- VPS VAN GIU PORT $VPS_RPORT (phien treo cu chinh may nay, thuong xay sau khi reboot/mat mang)" >> "$TLOG" 2>&1
+      echo "--- tren VPS: ss -tlnp | grep $VPS_RPORT   roi   sudo kill <PID>" >> "$TLOG" 2>&1
+      echo "--- da them ClientAliveInterval tren VPS: phien treo tu rut sau ~3 phut, loop se vao lai" >> "$TLOG" 2>&1
       kill \$TUNPID 2>/dev/null; sleep 1; kill -9 \$TUNPID 2>/dev/null
     fi
   fi
@@ -240,5 +260,5 @@ cmd_stop() {
 }
 case "${1:-status}" in
   start) cmd_start;; stop) cmd_stop;; restart) cmd_stop; sleep 1; cmd_start;;
-  status) cmd_status;; log) cmd_log;; endpoint) cmd_endpoint;; *) echo "dung: $0 start|stop|restart|status|log|endpoint" >&2; exit 2;;
+  status) cmd_status;; log) cmd_log;; endpoint) cmd_endpoint;; doctor) cmd_doctor;; *) echo "dung: $0 start|stop|restart|status|log|endpoint|doctor" >&2; exit 2;;
 esac
