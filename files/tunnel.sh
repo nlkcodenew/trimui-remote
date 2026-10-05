@@ -162,11 +162,36 @@ cmd_start() {
   cat > "$LOOPF" <<EOF
 #!/bin/sh
 # tunnel-loop v$CURVER - tu sinh boi tunnel.sh - dung sua tay
+# v0.8.2: diet session zombie (dbclient khong co ExitOnForwardFailure nhu ssh,
+# forward fail van giu ket noi chet lam nong may) + backoff 5s->55s khi rot lien tuc.
+FAIL=0
 while :; do
   echo "--- \$(date '+%Y-%m-%d %H:%M:%S') chay: $TUNCMD" >> "$TLOG" 2>&1
-  $TUNCMD >> "$TLOG" 2>&1
-  echo "--- mat ket noi, thu lai sau 5s" >> "$TLOG" 2>&1
-  sleep 5
+  START=\$(date +%s 2>/dev/null || echo 0)
+  MSZ=\$(wc -c < "$TLOG" 2>/dev/null | tr -d ' '); [ -n "\$MSZ" ] || MSZ=0
+  $TUNCMD >> "$TLOG" 2>&1 &
+  TUNPID=\$!
+  # Cho dbclient khoi dong; neu forward fail ma van song = zombie -> kill ngay.
+  # Chi xet log MOI tu MSZ (tranh nhan lai loi cu cua vong truoc).
+  sleep 12
+  if kill -0 \$TUNPID 2>/dev/null; then
+    if tail -c +\$\((\$MSZ + 1)) "$TLOG" 2>/dev/null | grep -q "Remote TCP forward request failed"; then
+      echo "--- forward that bai (port VPS bi giu/trung RPORT?), kill de thu lai" >> "$TLOG" 2>&1
+      kill \$TUNPID 2>/dev/null; sleep 1; kill -9 \$TUNPID 2>/dev/null
+    fi
+  fi
+  wait \$TUNPID 2>/dev/null
+  NOW=\$(date +%s 2>/dev/null || echo 0)
+  ELAPSED=\$((NOW - START))
+  if [ "\$ELAPSED" -gt 60 ] 2>/dev/null; then
+    FAIL=0
+  else
+    FAIL=\$((FAIL + 1))
+    [ "\$FAIL" -gt 5 ] && FAIL=5
+  fi
+  SL=\$((5 + FAIL * 10))
+  echo "--- mat ket noi, thu lai sau \${SL}s" >> "$TLOG" 2>&1
+  sleep \$SL
 done
 EOF
   chmod +x "$LOOPF" 2>/dev/null

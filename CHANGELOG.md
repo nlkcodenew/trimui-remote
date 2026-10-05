@@ -1,5 +1,20 @@
 # Changelog — Trimui-Remote
 
+## v0.8.2
+
+- **Tắt đèn màn hình kiểu Music Player (nút Y)**: `ioctl(/dev/disp, 0x102, 0)`
+  để màn đen nhưng máy vẫn thức + WiFi sống (khác Power=suspend=tắt WiFi).
+  Bấm phím bất kỳ để sáng lại. Lúc tắt UI nghỉ 100ms/frame nên mát CPU.
+  Dùng ngay qua SSH khi đã B-thoát: `sh screen.sh off` / `sh screen.sh on`.
+- **Giữ `/tmp/stay_alive` khi SSH nền còn sống**: `launch.sh` tạo lúc mở,
+  B-thoát giữ lại, chỉ xóa khi X-tắt dịch vụ (đo thực tế: mất file này là
+  auto-suspend giết dropbear/tunnel). Crash để màn đen thì lần mở sau tự
+  sáng lại qua `data/display-restore.json`.
+- **Diệt tunnel zombie**: `dbclient` không có `ExitOnForwardFailure` như `ssh`
+  nên forward fail (trùng `VPS_RPORT` trên VPS) vẫn giữ kết nối chết gây nóng.
+  Loop nay kill sau 12s nếu thấy `Remote TCP forward request failed`, backoff
+  `5s->55s` khi rớt liên tục thay vì 5s cố định.
+
 ## v0.8.1
 
 - **Không ship private key trong ZIP public**: `tunnel_key` loại khỏi đóng gói

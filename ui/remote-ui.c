@@ -2,12 +2,18 @@
  * - Chu TO theo pixel that (bai hoc Xiaozhi: khong dung logical size co dinh).
  * - Nut B (joystick button 0) lan 1: hien panel xac nhan TO giua man hinh.
  *   Nut B lan 2 trong 4s: thoat. Thoat man hinh KHONG tat dich vu nen.
+ * - Nut Y (button 2) / phim y: TAT DEN man hinh kieu Music Player
+ *   (ioctl /dev/disp 0x102 ve 0, may van thuc + WiFi song, khac Power=suspend).
+ *   Bam phim bat ky de sang lai. Luc tat chi Delay 100ms, khong ve gi.
  * - Du phong: SELECT(8)+START(9) cung luc = thoat ngay; ESC tren ban phim cung vay.
  * - Endpoint Internet (VPS co dinh / Pinggy) duoc poll tu tunnel.sh moi 2s.
  * Build (CI): aarch64-linux-gnu-gcc -Os -o remote-ui remote-ui.c -lSDL2 -lSDL2_ttf
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <errno.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,10 +21,102 @@
 #include <unistd.h>
 
 #define BTN_B 0
+#define BTN_A 1
+#define BTN_Y 2
 #define BTN_X 3
 #define BTN_SELECT 8
 #define BTN_START 9
 #define CONFIRM_MS 4000
+
+/* Tat den man hinh kieu Music Player: ioctl(/dev/disp, 0x102, 0),
+ * may van thuc + WiFi song (khac han Power=suspend=tắt WiFi).
+ * Bat ky phim nao cung sang lai. */
+#define DISP_DEV "/dev/disp"
+#define DISP_LCD_SET_BRIGHTNESS 0x102
+static int disp_saved_brightness = -1;
+static int disp_is_off = 0;
+static char disp_recovery[768];
+
+static int disp_set(int value) {
+    int fd = open(DISP_DEV, O_RDWR);
+    if (fd < 0) return 0;
+    unsigned long p[4];
+    p[0] = 0; p[1] = (unsigned long)value; p[2] = 0; p[3] = 0;
+    int rc = ioctl(fd, DISP_LCD_SET_BRIGHTNESS, p);
+    close(fd);
+    return rc == 0;
+}
+
+static int disp_read_saved(void) {
+    static const char *paths[] = {
+        "/mnt/SDCARD/Saves/trim-ui-brick-pro-system.json",
+        "/mnt/UDISK/system.json",
+        "/appconfigs/system.json",
+        NULL
+    };
+    for (int i = 0; paths[i]; i++) {
+        FILE *f = fopen(paths[i], "r");
+        if (!f) continue;
+        char buf[1024];
+        size_t n = fread(buf, 1, sizeof(buf) - 1, f);
+        buf[n] = '\0';
+        fclose(f);
+        char *k = strstr(buf, "backlight");
+        if (!k) k = strstr(buf, "brightness");
+        if (!k) continue;
+        char *c = strchr(k, ':');
+        if (!c) continue;
+        int v = atoi(c + 1);
+        if (v >= 1 && v <= 10) return (int)((v - 1) * 254.0 / 9.0 + 1.0);
+        if (v >= 1 && v <= 255) return v;
+    }
+    /* Thu file recovery do lan screen_off truoc de lai (crash giua chung). */
+    if (disp_recovery[0]) {
+        FILE *f = fopen(disp_recovery, "r");
+        if (f) {
+            int v = 0;
+            if (fscanf(f, "{\"brightness\": %d}", &v) == 1 && v >= 1 && v <= 255) {
+                fclose(f);
+                return v;
+            }
+            fclose(f);
+        }
+    }
+    return 128;
+}
+
+static void disp_write_recovery(int v) {
+    if (!disp_recovery[0]) return;
+    char tmp[800];
+    snprintf(tmp, sizeof(tmp), "%s.tmp", disp_recovery);
+    FILE *f = fopen(tmp, "w");
+    if (!f) return;
+    fprintf(f, "{\"brightness\": %d}\n", v);
+    fclose(f);
+    rename(tmp, disp_recovery);
+}
+
+static void disp_clear_recovery(void) {
+    if (disp_recovery[0]) unlink(disp_recovery);
+}
+
+static void screen_off(void) {
+    if (disp_is_off) return;
+    if (disp_saved_brightness < 0)
+        disp_saved_brightness = disp_read_saved();
+    disp_write_recovery(disp_saved_brightness);
+    if (disp_set(0)) disp_is_off = 1;
+}
+
+static void screen_on(void) {
+    if (!disp_is_off) return;
+    int v = disp_saved_brightness > 0 ? disp_saved_brightness : 128;
+    if (v < 1) v = 1;
+    if (v > 255) v = 255;
+    disp_set(v);
+    disp_is_off = 0;
+    disp_clear_recovery();
+}
 
 static SDL_Window *win;
 static SDL_Renderer *ren;
@@ -226,6 +324,17 @@ int main(int argc, char **argv) {
     const char *lan_ip = (argc > 1 && argv[1][0]) ? argv[1] : "?";
     const char *ver = (argc > 2 && argv[2][0]) ? argv[2] : "";
     appdir = (argc > 3 && argv[3][0]) ? argv[3] : "/mnt/SDCARD/Apps/TrimuiRemote";
+    snprintf(disp_recovery, sizeof(disp_recovery), "%s/data/display-restore.json", appdir);
+    /* Crash lan truoc de man den: sang lai ngay de khong bi man den vinh vien. */
+    if (access(disp_recovery, F_OK) == 0) {
+        disp_saved_brightness = disp_read_saved();
+        screen_on();
+        /* screen_on chi tac dung khi disp_is_off; truong hop crash thi
+         * brightness dang 0 ma flag da mat -> bat buoc set truc tiep. */
+        disp_set(disp_saved_brightness > 0 ? disp_saved_brightness : 128);
+        disp_clear_recovery();
+        disp_saved_brightness = -1;
+    }
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) != 0) return 1;
     if (TTF_Init() != 0) return 1;
@@ -266,16 +375,20 @@ int main(int argc, char **argv) {
     while (running) {
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) running = 0;
+            if (e.type == SDL_QUIT) { screen_on(); running = 0; }
             else if (e.type == SDL_JOYBUTTONDOWN) {
                 int b = (int)e.jbutton.button;
                 if (b >= 0 && b < 16) pressed[b] = 1;
-                if (pressed[BTN_SELECT] && pressed[BTN_START]) running = 0;
+                /* Man dang tat: bat ky phim nao cung chi de sang lai. */
+                if (disp_is_off) { screen_on(); confirm_at = 0; continue; }
+                if (pressed[BTN_SELECT] && pressed[BTN_START]) { screen_on(); running = 0; }
+                else if (b == BTN_Y) { screen_off(); confirm_at = 0; }
                 else if (b == BTN_B || b == BTN_X) {
                     int what = (b == BTN_B) ? 1 : 2;
                     Uint32 now = SDL_GetTicks();
                     if (confirm_at && confirm_what == what && now - confirm_at < CONFIRM_MS) {
                         rc = (what == 2) ? 3 : 0;
+                        screen_on();
                         running = 0;
                     } else { confirm_at = now; confirm_what = what; }
                 }
@@ -283,19 +396,24 @@ int main(int argc, char **argv) {
                 int b = (int)e.jbutton.button;
                 if (b >= 0 && b < 16) pressed[b] = 0;
             } else if (e.type == SDL_KEYDOWN) {
+                if (disp_is_off) { screen_on(); confirm_at = 0; continue; }
                 int what = 0;
                 if (e.key.keysym.sym == SDLK_ESCAPE) what = 1;
                 else if (e.key.keysym.sym == SDLK_x) what = 2;
+                else if (e.key.keysym.sym == SDLK_y) { screen_off(); confirm_at = 0; continue; }
                 if (what) {
                     Uint32 now = SDL_GetTicks();
                     if (confirm_at && confirm_what == what && now - confirm_at < CONFIRM_MS) {
                         rc = (what == 2) ? 3 : 0;
+                        screen_on();
                         running = 0;
                     } else { confirm_at = now; confirm_what = what; }
                 }
             }
         }
         if (confirm_at && SDL_GetTicks() - confirm_at >= CONFIRM_MS) confirm_at = 0;
+        /* Man tat: khong ve gi ca (den da 0), nghi dai de mat CPU/RAM. */
+        if (disp_is_off) { poll_endpoint(0); SDL_Delay(100); continue; }
         poll_endpoint(0);
 
         SDL_SetRenderDrawColor(ren, 13, 17, 23, 255);
@@ -325,7 +443,8 @@ int main(int argc, char **argv) {
         char auth[160];
         snprintf(auth, sizeof(auth), "User: root   Pass: mật khẩu root của máy");
         draw_text(f_body, auth, W / 2, y, 255, 255, 255); y += lh * 2;
-        draw_text(f_small, "B: thoát màn hình (dịch vụ vẫn chạy)", W / 2, H - sz_small * 5, 140, 140, 140);
+        draw_text(f_small, "B: thoát màn hình (dịch vụ vẫn chạy)", W / 2, H - sz_small * 7, 140, 140, 140);
+        draw_text(f_small, "Y: tắt màn hình (vẫn SSH, bấm phím bất kỳ để sáng)", W / 2, H - sz_small * 5, 140, 140, 140);
         draw_text(f_small, "X: TẮT dịch vụ + thoát", W / 2, H - sz_small * 3, 140, 140, 140);
 
         if (confirm_at) {
@@ -349,5 +468,6 @@ int main(int argc, char **argv) {
 
     TTF_Quit();
     SDL_Quit();
+    screen_on();
     return rc;
 }

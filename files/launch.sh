@@ -12,6 +12,14 @@ VER="$(cat "$APP/VERSION" 2>/dev/null | tr -d ' \r\n')"
 # Tu chua quyen thuc thi (the nho FAT khong giu +x, copy tay co the mat).
 chmod +x "$APP"/bin/* "$APP"/*.sh 2>/dev/null
 
+# 0. Giu may tranh deep-suspend khi SSH nen con song (hoc theo
+# Trimui-Terminal / chiaki-ng / Music Player). Chi xoa khi X-tat dich vu.
+touch /tmp/stay_alive 2>/dev/null
+# Crash lan truoc de man den (brightness 0): sang lai ngay.
+if [ -f "$APP/data/display-restore.json" ] && [ -x "$APP/screen.sh" ]; then
+  sh "$APP/screen.sh" on >> "$LOG" 2>&1 || true
+fi
+
 # 1. OTA chay NEN (khong chan mo app). Co ban moi thi lan mo sau se dung.
 # Tat bang REMOTE_NO_OTA=1.
 if [ "$REMOTE_NO_OTA" != "1" ] && [ -x "$APP/ota-update.sh" ]; then
@@ -53,6 +61,19 @@ if [ -x "$APP/bin/remote-ui" ]; then
     echo "nguoi dung chon TAT dich vu (X)." >> "$LOG" 2>&1
     sh "$APP/tunnel.sh" stop >> "$LOG" 2>&1
     sh "$APP/remote.sh" stop >> "$LOG" 2>&1
+    # Da tat het dich vu -> cho may suspend lai binh thuong + sang man.
+    [ -x "$APP/screen.sh" ] && sh "$APP/screen.sh" on >> "$LOG" 2>&1 || true
+    rm -f /tmp/stay_alive 2>/dev/null
+  else
+    # B-thoat (giu SSH nen): GIU stay_alive de auto-suspend khong
+    # giet dropbear/tunnel. Xoa /tmp/stay_alive = mat SSH (da do thuc te).
+    # remote-ui tu sang lai man khi thoat; crash giu den thi lan mo sau sang lai.
+    if sh "$APP/remote.sh" status >/dev/null 2>&1 \
+      || sh "$APP/tunnel.sh" status >/dev/null 2>&1; then
+      touch /tmp/stay_alive 2>/dev/null
+    else
+      rm -f /tmp/stay_alive 2>/dev/null
+    fi
   fi
 fi
 exit 0
