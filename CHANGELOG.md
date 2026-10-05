@@ -1,5 +1,13 @@
 # Changelog — Trimui-Remote
 
+## v0.8.3
+
+- **Sửa loop v0.8.2 không chạy được trên máy**: shell trên máy (hush) báo
+  `line 16: syntax error: unexpected "("` với số học lồng nhau
+  `tail -c +$(($MSZ + 1))`. Viết lại loop chỉ bằng cú pháp tối giản
+  (`grep -c` + so chuỗi + `case`), backoff `15s->55s`. Tăng version để máy
+  tự hủy loop v0.8.2 hỏng khi `tunnel.sh start` lại.
+
 ## v0.8.2
 
 - **Tắt đèn màn hình kiểu Music Player (nút Y)**: `ioctl(/dev/disp, 0x102, 0)`

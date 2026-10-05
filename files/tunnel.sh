@@ -162,35 +162,36 @@ cmd_start() {
   cat > "$LOOPF" <<EOF
 #!/bin/sh
 # tunnel-loop v$CURVER - tu sinh boi tunnel.sh - dung sua tay
-# v0.8.2: diet session zombie (dbclient khong co ExitOnForwardFailure nhu ssh,
-# forward fail van giu ket noi chet lam nong may) + backoff 5s->55s khi rot lien tuc.
-FAIL=0
+# v0.8.3: chi dung cu phap shell toi gian (v0.8.2 dung \$(( )) long nhau nen
+# hush tren may bao loi dong 16). Dem loi bang grep -c + so chuoi, backoff
+# bang case, khong so hoc, khong tail -c +N.
+FAIL=
 while :; do
   echo "--- \$(date '+%Y-%m-%d %H:%M:%S') chay: $TUNCMD" >> "$TLOG" 2>&1
-  START=\$(date +%s 2>/dev/null || echo 0)
-  MSZ=\$(wc -c < "$TLOG" 2>/dev/null | tr -d ' '); [ -n "\$MSZ" ] || MSZ=0
+  BEFORE=\$(grep -c "Remote TCP forward request failed" "$TLOG" 2>/dev/null)
+  [ -n "\$BEFORE" ] || BEFORE=0
   $TUNCMD >> "$TLOG" 2>&1 &
   TUNPID=\$!
-  # Cho dbclient khoi dong; neu forward fail ma van song = zombie -> kill ngay.
-  # Chi xet log MOI tu MSZ (tranh nhan lai loi cu cua vong truoc).
-  sleep 12
+  # Cho dbclient khoi dong; neu co loi forward MOI ma van song = zombie -> kill.
+  sleep 10
   if kill -0 \$TUNPID 2>/dev/null; then
-    if tail -c +\$\((\$MSZ + 1)) "$TLOG" 2>/dev/null | grep -q "Remote TCP forward request failed"; then
+    AFTER=\$(grep -c "Remote TCP forward request failed" "$TLOG" 2>/dev/null)
+    [ -n "\$AFTER" ] || AFTER=0
+    if [ "\$AFTER" != "\$BEFORE" ]; then
       echo "--- forward that bai (port VPS bi giu/trung RPORT?), kill de thu lai" >> "$TLOG" 2>&1
       kill \$TUNPID 2>/dev/null; sleep 1; kill -9 \$TUNPID 2>/dev/null
     fi
   fi
   wait \$TUNPID 2>/dev/null
-  NOW=\$(date +%s 2>/dev/null || echo 0)
-  ELAPSED=\$((NOW - START))
-  if [ "\$ELAPSED" -gt 60 ] 2>/dev/null; then
-    FAIL=0
-  else
-    FAIL=\$((FAIL + 1))
-    [ "\$FAIL" -gt 5 ] && FAIL=5
-  fi
-  SL=\$((5 + FAIL * 10))
-  echo "--- mat ket noi, thu lai sau \${SL}s" >> "$TLOG" 2>&1
+  FAIL="\${FAIL}x"
+  case "\$FAIL" in
+    x) SL=15;;
+    xx) SL=25;;
+    xxx) SL=35;;
+    xxxx) SL=45;;
+    *) SL=55; FAIL="xxxxx";;
+  esac
+  echo "--- mat ket noi, thu lai sau \$SL s" >> "$TLOG" 2>&1
   sleep \$SL
 done
 EOF
