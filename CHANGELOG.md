@@ -1,5 +1,12 @@
 # Changelog — Trimui-Remote
 
+## v0.8.4
+
+- **Binary `remote-ui` mới (CI build từ source v0.8.2)**: nút **Y** tắt đèn màn
+  hình kiểu Music Player + bấm phím bất kỳ để sáng lại, lúc tắt nghỉ 100ms
+  nên mát CPU. Các bản 0.8.2/0.8.3 mới chỉ có source + `screen.sh` (dùng qua
+  SSH), bản này OTA cả binary nên bấm Y trên máy thật mới đen màn.
+
 ## v0.8.3
 
 - **Sửa loop v0.8.2 không chạy được trên máy**: shell trên máy (hush) báo
