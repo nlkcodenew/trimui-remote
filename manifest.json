@@ -1,11 +1,11 @@
 {
-  "version": "0.8.7",
+  "version": "0.8.8",
   "app": "trimui-remote",
-  "built": "2026-10-05T16:47:34+07:00",
+  "built": "2026-10-05T16:54:04+07:00",
   "files": [
     {
       "path": "VERSION",
-      "sha256": "02939ea165d14df175ec4d4212b9937ec97bd5d4d79133a013a0ced33cc17aa6",
+      "sha256": "25d3fe425891d4e6cb3a233f6b40013ae633373eecbb4dfcbeece3ce0287b14c",
       "size": 6
     },
     {
@@ -100,8 +100,8 @@
     }
   ],
   "release_asset": {
-    "name": "trimui-remote-v0.8.7.zip",
-    "sha256": "a983c133bc93353d9fffb31b859061a1ad8fdbf58dc211cd1b18b2f75783074d",
+    "name": "trimui-remote-v0.8.8.zip",
+    "sha256": "c60b21dc867305cbb913cade00f15abb0cf2d4cffc88c1743e69d80298b1c134",
     "size": 1193774
   }
 }

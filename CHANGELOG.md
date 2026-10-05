@@ -1,5 +1,20 @@
 # Changelog — Trimui-Remote
 
+## v0.8.8
+
+- **README viết lại toàn bộ tiếng Việt có dấu** (trước đó thiếu dấu gần hết).
+  Bổ sung mục cần thiết cho vận hành thật:
+  - **Bản cập nhật (OTA)**: giải thích 3 dòng thông báo trên màn hình
+    (`Đang kiểm tra...`, `Đang tải bản mới X...`, `Có bản mới X - thoát app
+    mở lại để dùng`) và cách cài thủ công.
+  - **Tiết kiệm pin và tránh máy nóng**: thứ tự ưu tiên tắt đèn (phím Y) →
+    tắt hẳn dịch vụ (X 2 lần) → nhớ rằng backlight là nguồn tiêu thụ lớn nhất.
+  - **Mỗi máy một port riêng trên VPS**: nguyên nhân `Remote TCP forward request
+    failed` và cách kill session treo.
+  - **Xử lý sự cố** thêm 3 dòng mới (trùng `VPS_RPORT`, mất SSH vì mất
+    `stay_alive`, `screen.sh` thiếu `dispctl`).
+- Changelog rà lại chữ không dấu còn sót.
+
 ## v0.8.7
 
 - **Chữ tiếng Việt có dấu trên màn hình**: dòng chế độ VPS trước hiện

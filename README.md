@@ -16,6 +16,7 @@ Một bản duy nhất chạy cả **Brick Pro (1024×768)** và **Smart Pro S (
 | `launch.sh`, `remote.sh`, `tunnel.sh` | ~0 (chạy xong là thoát) | shell POSIX, không Python/SDL |
 | `dropbear` (SSH server) | ~1MB/kết nối | thay OpenSSH (~10MB+) |
 | `tunnel` reverse-SSH | ~1MB | thay Tailscale (~30–50MB) |
+| `keepalive-loop` | ~0 | chỉ chạm `/tmp/stay_alive` mỗi 15s |
 | **Tổng chạy nền** | **<5MB / 1GB** | chơi game không bị ảnh hưởng |
 
 ## Cài đặt
@@ -28,14 +29,26 @@ Một bản duy nhất chạy cả **Brick Pro (1024×768)** và **Smart Pro S (
      user `root` + mật khẩu. Bản mới (nếu có) tự tải nền, lần mở sau dùng.
    - Thoát màn hình: **phím B 2 lần** (có panel xác nhận to giữa màn hình).
      Thoát màn hình **không tắt** dịch vụ nền.
-   - Tiết kiệm pin mà giữ SSH: **phím Y** tắt đèn màn hình kiểu Music Player
-     (màn đen, máy vẫn thức, WiFi sống — khác nút Power là suspend=tắt WiFi).
-     Bấm phím bất kỳ để sáng lại. Đã B-thoát về menu vẫn dùng được qua SSH:
-     `sh screen.sh off` / `sh screen.sh on` trong thư mục app.
-   - Tắt hẳn dịch vụ (tiết kiệm pin): **phím X 2 lần** trên màn hình app
+   - Tắt đèn màn hình mà vẫn giữ SSH: **phím Y** — màn đen, máy vẫn thức,
+     WiFi vẫn sống (khác hẳn nút Power là suspend, sẽ tắt WiFi và mất SSH).
+     Bấm phím bất kỳ để sáng lại. Đã B-thoát về menu vẫn dùng được:
+     `sh screen.sh off` / `sh screen.sh on`.
+   - Tắt hẳn dịch vụ (tiết kiệm pin tối đa): **phím X 2 lần** trên màn hình app
      (có panel xác nhận riêng). Lần sau mở app, dịch vụ chạy lại.
-   - Muốn tắt hẳn: trong Trimui Terminal gõ `sh remote.sh stop` và `sh tunnel.sh stop`
-     trong thư mục app.
+   - Muốn tắt hẳn bằng tay: trong Trimui Terminal gõ `sh remote.sh stop` và
+     `sh tunnel.sh stop` trong thư mục app.
+
+## Bản cập nhật (OTA)
+
+App tự kiểm tra bản mới **chạy nền** mỗi lần mở, không làm màn hình bị trễ:
+
+- Mở app xong thấy dòng vàng trên màn hình:
+  - `Đang kiểm tra bản mới...` → đang tải danh mục;
+  - `Đang tải bản mới X...` → đang tải;
+  - `Có bản mới X - thoát app mở lại để dùng` → **thoát app rồi mở lại một lần**
+    là dùng được bản mới.
+- Cài thủ công ngay: `sh ota-update.sh --apply`.
+- Tắt OTA: `REMOTE_NO_OTA=1`.
 
 ## Dùng SSH trong mạng LAN (cùng WiFi)
 
@@ -93,7 +106,25 @@ ssh root@<IP-MAY> -p 2222 "chmod 600 /mnt/SDCARD/Apps/TrimuiRemote/data/tunnel_k
 Key nằm trong `data/` nên sống sót qua OTA. Mất key thì tunnel không nối được
 (xem `tunnel.sh log` trên máy).
 
-## Dùng Pinggy khi chưa muốn qua VPS (dự phòng)
+### Mỗi máy một port riêng trên VPS
+
+Reverse-forward **chỉ nhận một máy một port**. Nếu cho hai máy dùng chung
+`VPS_RPORT`, máy sau sẽ báo `Remote TCP forward request failed` và treo phiên
+vô dụng (vừa gây nóng máy, vừa mất SSH). Cách sửa trên VPS:
+
+```sh
+# 1. Xem ai đang giữ port
+ss -tlnp | grep 22223
+
+# 2. Nếu còn session cũ treo, kill đúng PID rồi kiểm tra lại
+sudo kill <PID>
+ss -tlnp | grep 22223     # phải rỗng
+
+# 3. Máy thứ hai: dựng key riêng + port riêng, rồi khai báo
+#    VPS_RPORT=22224 trong data/tunnel.conf của máy đó
+```
+
+### Dùng Pinggy khi chưa muốn qua VPS (dự phòng)
 
 Máy game và PC hỗ trợ **không cần cùng mạng**, chỉ cần cả hai đều có Internet.
 
@@ -126,13 +157,6 @@ Lưu ý của bản test:
 
 Chi tiết kỹ thuật: xem `docs/TUNNEL_PINGGY.md`.
 
-## Dùng Pinggy khi chưa muốn qua VPS (dự phòng)
-
-Đổi `MODE=pinggy` trong `data/tunnel.conf` rồi `sh tunnel.sh restart`. Còn lại
-giữ nguyên các bước như mục Pinggy cũ dưới đây.
-
-## Dùng SSH qua Internet bằng Pinggy (test nhanh, không cần VPS)
-
 ## Thu log debug (1 lệnh duy nhất)
 
 Trên máy:
@@ -152,10 +176,10 @@ scp -P 2222 root@<IP>:/mnt/SDCARD/Apps/TrimuiRemote/data/debug-*.tgz ./
 
 ```
 Apps/TrimuiRemote/
-  launch.sh  remote.sh  tunnel.sh  net-survey.sh  collect-logs.sh  ota-update.sh
+  launch.sh  remote.sh  tunnel.sh  screen.sh  net-survey.sh  collect-logs.sh  ota-update.sh
   tunnel.conf.example  config.json  icon.png  VERSION  Remote-ip.txt
-  bin/dropbear  bin/dropbearkey
-  data/  (host-key, authorized_keys, tunnel.conf, pid, log, debug-*.tgz — giữ lại khi OTA)
+  bin/dropbear  bin/dbclient  bin/dispctl  bin/remote-ui
+  data/  (host-key, authorized_keys, tunnel.conf, tunnel_key, pid, log, debug-*.tgz — giữ lại khi OTA)
 ```
 
 ## Bảo mật tối thiểu
@@ -164,6 +188,21 @@ Apps/TrimuiRemote/
 - Nên chép public-key của người hỗ trợ vào `data/authorized_keys` để login bằng key.
 - Port mặc định **2222** (tránh port 22), không mở port router, LAN chỉ dùng nội bộ.
 - Tunnel Pinggy chỉ bật khi cần debug, xong thì `tunnel.sh stop`.
+- Key trên VPS bị giới hạn bằng `permitlisten` (chỉ được mở đúng `VPS_RPORT`).
+
+## Tiết kiệm pin và tránh máy nóng
+
+Ba điều quan trọng nhất, theo thứ tự nên làm:
+
+1. **Tắt đèn màn hình, đừng bấm Power.** Phím **Y** tắt đèn (màn đen nhưng
+   máy thức, WiFi sống, SSH không rớt). Power = suspend = tắt WiFi = mất SSH.
+2. **Tắt hẳn dịch vụ khi không dùng**: phím **X 2 lần**, hoặc
+   `sh remote.sh stop && sh tunnel.sh stop`. Lúc này máy ngủ lại bình thường.
+3. **Nhớ rằng backlight là nguồn tiêu thụ lớn nhất.** Chỉ riêng việc chuyển từ
+   "màn sáng + SSH nền" sang "màn đen + SSH nền" đã giảm phần lớn nhiệt và pin.
+
+Ngoài app, các thứ hay gây nóng máy: app khác đang chạy nền (ví dụ
+`lottoforecast`), Bluetooth, và đèn nền. Tắt hẳn những thứ không dùng.
 
 ## Xử lý sự cố
 
@@ -172,13 +211,17 @@ Apps/TrimuiRemote/
 | Không SSH được LAN | `remote.sh status`, ping IP trong `Remote-ip.txt`, chắc chắn cùng WiFi |
 | `thieu dropbear` | chạy `sh net-survey.sh`, gửi file `Net-survey-*.log` để build binary |
 | Tunnel không lên | `tunnel.sh log` xem lỗi, thử lại sau (Pinggy free hay nghẽn) |
+| `Remote TCP forward request failed` | VPS đang có máy khác giữ `VPS_RPORT`; xem mục "Mỗi máy một port riêng" |
+| SSH rớt sau vài phút không mở app | máy tự suspend vì mất `/tmp/stay_alive`; mở lại app để bật `keepalive-loop` |
 | Mất SSH sau reboot | bình thường — mở app lại một lần |
+| `screen.sh off` báo lỗi | máy chưa có `bin/dispctl` (CI chưa build) — dùng phím **Y** trong app |
 
 ## Build `bin/dropbear` (dành cho dev)
 
 Binary static aarch64 (`dropbear`, `dbclient`, `dropbearkey`) được build tự động bằng
 GitHub Actions (`.github/workflows/dropbear.yml`, `zig cc -target aarch64-linux-musl`),
-tải về bằng `python3 tools/fetch_dropbear.py` rồi mới đóng gói release.
+tải bằng `python3 tools/fetch_dropbear.py` rồi mới đóng gói release.
+`bin/remote-ui` build bằng `.github/workflows/ui.yml`.
 Không cần build tay trừ khi đổi phiên bản dropbear.
 
 Đóng gói release (giống chuẩn Terminal):
