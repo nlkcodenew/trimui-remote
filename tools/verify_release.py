@@ -40,7 +40,7 @@ def main():
     check(shipped_version == version, "files/VERSION khop VERSION (%r)" % shipped_version)
     cfg = json.load(open(os.path.join(ROOT, "files", "config.json"), encoding="utf-8"))
     check(cfg.get("launch") == "launch.sh", "config.json tro dung launch.sh")
-    for sh in ("launch.sh", "remote.sh", "tunnel.sh", "show-status.sh", "net-survey.sh", "collect-logs.sh"):
+    for sh in ("launch.sh", "remote.sh", "tunnel.sh", "show-status.sh", "screen.sh", "net-survey.sh", "collect-logs.sh"):
         p = os.path.join(ROOT, "files", sh)
         if os.path.isfile(p):
             with open(p, "rb") as h:
@@ -72,7 +72,7 @@ def main():
           "assets/font.ttf ton tai (chu Viet co dau)")
     check(os.path.isfile(os.path.join(ROOT, "ui", "remote-ui.c")), "ui/remote-ui.c ton tai")
     # Binary: BAT BUOC tu v0.3 (stock OS khong co san dropbear).
-    for b in ("bin/dropbear", "bin/dbclient", "bin/dropbearkey", "bin/dropbearconvert", "bin/remote-ui"):
+    for b in ("bin/dropbear", "bin/dbclient", "bin/dropbearkey", "bin/dropbearconvert", "bin/remote-ui", "bin/dispctl"):
         p = os.path.join(ROOT, "files", b)
         if os.path.isfile(p):
             with open(p, "rb") as h:

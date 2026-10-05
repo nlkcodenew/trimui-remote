@@ -1,5 +1,19 @@
 # Changelog — Trimui-Remote
 
+## v0.8.5
+
+- **Màn hình báo cập nhật rõ ràng**: đang mở app bản cũ mà OTA nền thấy bản
+  mới thì hiện dòng vàng `Có bản mới X - thoát app mở lại để dùng`
+  (đang tải/đang kiểm tra cũng báo). Hết cảnh "mù mờ" như ảnh chụp 0.8.3.
+- **Chế độ VPS hiện đúng**: trước đây VPS luôn báo `đang kết nối...` vì chỉ
+  Pinggy mới có địa chỉ `tcp://`. Nay VPS hiện
+  `VPS OK: trên PC chạy ssh trimui-brick`.
+- **`screen.sh` không cần python3 nữa**: máy không có sẵn python3 nên
+  `screen.sh off` báo thiếu. Nay điều khiển đèn qua binary riêng
+  `bin/dispctl` (C, `ioctl(/dev/disp, 0x102)`, build bằng CI như `remote-ui`),
+  đọc brightness hệ thống bằng `grep` shell thuần. `python3` chỉ còn là
+  fallback.
+
 ## v0.8.4
 
 - **Binary `remote-ui` mới (CI build từ source v0.8.2)**: nút **Y** tắt đèn màn

@@ -320,6 +320,56 @@ static void poll_endpoint(int force) {
     pclose(p);
 }
 
+/* Trang thai OTA: ota-update.sh (chay nen khi mo app) ghi file .ota-status:
+ * "checking" | "downloading <ver>" | "done <ver>" | "failed".
+ * Hien 1 dong vang tren man hinh de khong "mu mo" khi co ban moi. */
+static char ota_buf[96];
+static Uint32 last_ota_poll;
+static int vps_mode = 0;
+static void read_mode_once(void) {
+    static int done = 0;
+    if (done) return;
+    done = 1;
+    char p[768];
+    snprintf(p, sizeof(p), "%s/data/tunnel.conf", appdir);
+    FILE *f = fopen(p, "r");
+    if (!f) return;
+    char line[128];
+    while (fgets(line, sizeof(line), f)) {
+        if (strncmp(line, "MODE=", 5) == 0) {
+            if (strstr(line, "vps")) vps_mode = 1;
+            break;
+        }
+    }
+    fclose(f);
+}
+static void poll_ota(int force) {
+    Uint32 now = SDL_GetTicks();
+    if (!force && now - last_ota_poll < 2000) return;
+    last_ota_poll = now;
+    ota_buf[0] = 0;
+    char p[768];
+    snprintf(p, sizeof(p), "%s/.ota-status", appdir);
+    FILE *f = fopen(p, "r");
+    if (!f) return;
+    char s[64];
+    if (fgets(s, sizeof(s), f)) {
+        size_t n = strlen(s);
+        while (n && (s[n-1] == '\n' || s[n-1] == '\r' || s[n-1] == ' '))
+            s[--n] = 0;
+        if (strncmp(s, "done ", 5) == 0)
+            snprintf(ota_buf, sizeof(ota_buf),
+                     "Có bản mới %s - thoát app mở lại để dùng", s + 5);
+        else if (strncmp(s, "downloading ", 12) == 0)
+            snprintf(ota_buf, sizeof(ota_buf),
+                     "Đang tải bản mới %s...", s + 12);
+        else if (strcmp(s, "checking") == 0)
+            snprintf(ota_buf, sizeof(ota_buf), "Đang kiểm tra bản mới...");
+        /* failed -> giu im lang, tranh spam */
+    }
+    fclose(f);
+}
+
 int main(int argc, char **argv) {
     const char *lan_ip = (argc > 1 && argv[1][0]) ? argv[1] : "?";
     const char *ver = (argc > 2 && argv[2][0]) ? argv[2] : "";
@@ -370,7 +420,9 @@ int main(int argc, char **argv) {
     int rc = 0;
     int running = 1;
     int pressed[16] = {0};
+    read_mode_once();
     poll_endpoint(1);
+    poll_ota(1);
 
     while (running) {
         SDL_Event e;
@@ -413,18 +465,27 @@ int main(int argc, char **argv) {
         }
         if (confirm_at && SDL_GetTicks() - confirm_at >= CONFIRM_MS) confirm_at = 0;
         /* Man tat: khong ve gi ca (den da 0), nghi dai de mat CPU/RAM. */
-        if (disp_is_off) { poll_endpoint(0); SDL_Delay(100); continue; }
+        if (disp_is_off) { poll_endpoint(0); poll_ota(0); SDL_Delay(100); continue; }
         poll_endpoint(0);
+        poll_ota(0);
 
         SDL_SetRenderDrawColor(ren, 13, 17, 23, 255);
         SDL_RenderClear(ren);
         int y = H / 14;
         int lh = sz_body + sz_body / 3;
         draw_text(f_title, title, W / 2, y, 229, 9, 20); y += sz_title + lh;
+        if (ota_buf[0]) {
+            draw_text(f_small, ota_buf, W / 2, y, 255, 200, 60);
+            y += sz_small + sz_small / 2;
+        }
         draw_text(f_body, "SSH trong mạng LAN (cùng WiFi):", W / 2, y, 255, 255, 255); y += lh;
         draw_text(f_body, lan, W / 2, y, 63, 185, 80); y += lh;
         draw_text(f_body, "SSH qua Internet:", W / 2, y, 255, 255, 255); y += lh;
-        if (ep_buf[0]) {
+        if (vps_mode) {
+            /* VPS: port co dinh, khong co tcp:// nhu Pinggy. */
+            draw_text(f_body, "VPS OK: tren PC chay: ssh trimui-brick", W / 2, y, 63, 185, 80); y += lh;
+            draw_text(f_small, "(user root, khong can cung mang)", W / 2, y, 160, 160, 160); y += lh;
+        } else if (ep_buf[0]) {
             char net[300];
             /* Pinggy: dia chi doi lien tuc. VPS: dung ssh trimui-brick tren PC. */
             if (strstr(ep_buf, "pinggy.io"))
