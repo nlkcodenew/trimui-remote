@@ -72,7 +72,7 @@ def main():
           "assets/font.ttf ton tai (chu Viet co dau)")
     check(os.path.isfile(os.path.join(ROOT, "ui", "remote-ui.c")), "ui/remote-ui.c ton tai")
     # Binary: BAT BUOC tu v0.3 (stock OS khong co san dropbear).
-    for b in ("bin/dropbear", "bin/dbclient", "bin/dropbearkey", "bin/dropbearconvert", "bin/remote-ui", "bin/dispctl"):
+    for b in ("bin/dropbear", "bin/dbclient", "bin/dropbearkey", "bin/dropbearconvert", "bin/remote-ui"):
         p = os.path.join(ROOT, "files", b)
         if os.path.isfile(p):
             with open(p, "rb") as h:
@@ -81,6 +81,16 @@ def main():
             check(int.from_bytes(magic[18:20], "little") == 0xB7, "%s la AArch64" % b)
         else:
             check(False, "%s bat buoc tu v0.3 (build bang CI dropbear-static)" % b)
+    # dispctl: tieu chuc cho screen.sh khi da B-thoat. remote-ui (nut Y) van
+    # tu tat den duoc, thieu dispctl thi screen.sh bao loi ro rang.
+    p = os.path.join(ROOT, "files", "bin", "dispctl")
+    if os.path.isfile(p):
+        with open(p, "rb") as h:
+            magic = h.read(20)
+        check(magic[:4] == b"\x7fELF", "bin/dispctl la ELF")
+        check(int.from_bytes(magic[18:20], "little") == 0xB7, "bin/dispctl la AArch64")
+    else:
+        warn(False, "bin/dispctl chua build (screen.sh can no; nut Y van dung)")
     zips = [f for f in os.listdir(DIST) if f.endswith(".zip")] if os.path.isdir(DIST) else []
     if zips:
         zp = os.path.join(DIST, sorted(zips)[-1])
