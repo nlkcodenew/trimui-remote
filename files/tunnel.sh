@@ -67,6 +67,10 @@ cmd_status() {
     h="${ep#tcp://}"; host="${h%:*}"; tport="${h##*:}"
     echo "public: $ep"
     echo "ssh root@$host -p $tport   (mat khau root cua may game)"
+  elif [ "$MODE" = "vps" ]; then
+    # VPS khong in tcp:// (port co dinh, khai bao o tunnel.conf).
+    echo "public tren VPS: 127.0.0.1:$VPS_RPORT -> may nay"
+    echo "tren PC: ssh trimui-brick   (xem pc-ssh-config.txt)"
   else
     echo "dang cho Pinggy cap dia chi... chay '$0 log' de xem"
   fi
@@ -105,17 +109,19 @@ build_cmd() {
   fi
   if [ "$MODE" = "vps" ]; then
     [ -n "$VPS_HOST" ] || { echo "chua cau hinh VPS trong $CONF" >&2; return 1; }
+    # -K 120: chi chan/giam 1 lan/2 phut thay vi 30s -> it danh thuc radio
+    # (dien + nhiet). SSH proxy van cam duoc vi keepalive cua SSH client.
     if [ "$c" = "dbclient" ]; then
-      echo "$CBIN -p $VPS_PORT -R $VPS_RPORT:localhost:$PORT -N -T -y -K 30 $KEYARG $VPS_USER@$VPS_HOST"
+      echo "$CBIN -p $VPS_PORT -R $VPS_RPORT:localhost:$PORT -N -T -y -K 120 $KEYARG $VPS_USER@$VPS_HOST"
     else
-      echo "$CBIN -p $VPS_PORT -R $VPS_RPORT:localhost:$PORT -N -T -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ExitOnForwardFailure=yes $KEYARG $VPS_USER@$VPS_HOST"
+      echo "$CBIN -p $VPS_PORT -R $VPS_RPORT:localhost:$PORT -N -T -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=120 -o ExitOnForwardFailure=yes $KEYARG $VPS_USER@$VPS_HOST"
     fi
   else
     # Pinggy TCP tunnel: Pinggy tu cap port cong cong ngau nhien (-R0).
     if [ "$c" = "dbclient" ]; then
-      echo "$CBIN -p $PINGGY_PORT -R 0:localhost:$PORT -N -T -y -K 30 $KEYARG $PINGGY_USER@$PINGGY_HOST"
+      echo "$CBIN -p $PINGGY_PORT -R 0:localhost:$PORT -N -T -y -K 120 $KEYARG $PINGGY_USER@$PINGGY_HOST"
     else
-      echo "$CBIN -p $PINGGY_PORT -R 0:localhost:$PORT -N -T -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ExitOnForwardFailure=yes $KEYARG $PINGGY_USER@$PINGGY_HOST"
+      echo "$CBIN -p $PINGGY_PORT -R 0:localhost:$PORT -N -T -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=120 -o ExitOnForwardFailure=yes $KEYARG $PINGGY_USER@$PINGGY_HOST"
     fi
   fi
 }
@@ -211,7 +217,11 @@ EOF
   sleep 3
   if p="$(running_pid)"; then
     echo "da mo tunnel pid=$p mode=$MODE"
-    echo "cho Pinggy cap dia chi (5-15s), xem bang: sh tunnel.sh log"
+    if [ "$MODE" = "vps" ]; then
+      echo "tren PC: ssh trimui-brick   (port $VPS_RPORT tren VPS, co dinh)"
+    else
+      echo "cho Pinggy cap dia chi (5-15s), xem bang: sh tunnel.sh log"
+    fi
     return 0
   fi
   echo "khong mo duoc tunnel, xem $TLOG" >&2

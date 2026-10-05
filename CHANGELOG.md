@@ -1,5 +1,17 @@
 # Changelog — Trimui-Remote
 
+## v0.8.6
+
+- **Sửa lỗi mất SSH do mất `/tmp/stay_alive`** (đo trên máy thật): stock OS
+  có `keymon`/`musicserver` tự xóa file này khi hết phiên, nên `launch.sh`
+  touch một lần là không đủ — máy tự suspend và đá SSH. Nay `remote.sh start`
+  bật `keepalive-loop` chạm lại `/tmp/stay_alive` mỗi 15s; `remote.sh stop` dọn
+  keeper + xóa file để máy ngủ lại bình thường.
+- **Giảm hao điện/nhiệt của tunnel**: `-K 30` → `-K 120` (đánh thức radio WiFi
+  1 lần/2 phút thay vì 30 giây).
+- **Thông báo đúng chế độ VPS**: `tunnel.sh status/start` không còn báo
+  `đang chờ Pinggy` vô nghĩa, nay hiện `trên PC: ssh trimui-brick`.
+
 ## v0.8.5
 
 - **Màn hình báo cập nhật rõ ràng**: đang mở app bản cũ mà OTA nền thấy bản

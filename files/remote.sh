@@ -14,6 +14,11 @@ BIN_DROPBEAR="$APP/bin/dropbear"
 SYS_DROPBEAR="$(command -v dropbear 2>/dev/null)"
 PORT="${REMOTE_PORT:-2222}"
 PIDF="$DATA/dropbear.pid"
+# Keeper /tmp/stay_alive: stock OS (keymon, musicserver) TU XOA file nay khi
+# het phien, nen launch.sh touch mot lan la khong du. Keeper cham lai 15s de
+# may khong auto-suspend giet SSH nen.
+KEEP_LOOPF="$DATA/keepalive-loop.sh"
+KEEP_PIDF="$DATA/keepalive.pid"
 KEYF="$DATA/dropbear_host_key"
 AUTHKEYS="$DATA/authorized_keys"
 IPFILE="$APP/Remote-ip.txt"
@@ -50,6 +55,7 @@ cmd_start() {
   if p="$(running_pid)"; then
     echo "dang chay pid=$p port=$PORT"
     lan_ip > "$IPFILE" 2>/dev/null
+    start_keeper
     return 0
   fi
   DB="$(pick_dropbear)" || {
@@ -95,6 +101,7 @@ cmd_start() {
         echo "ssh root@$i -p $PORT   (mat khau root cua may)"
         echo "scp -P $PORT root@$i:/mnt/SDCARD/Logs/ ./  (copy log ve)"
       } | tee -a "$LOG"
+      start_keeper
       return 0
     fi
     sleep 1
@@ -104,7 +111,36 @@ cmd_start() {
   tail -n 20 "$LOG" 2>/dev/null >&2
   return 1
 }
+start_keeper() {
+  # Loop viet /tmp/stay_alive lien tuc. R re (che CPU/RAM rat nho).
+  cat > "$KEEP_LOOPF" <<'KEOF'
+#!/bin/sh
+# keepalive-loop: giu may thuc khi SSH nen dang chay (khong phai de man hinh).
+while :; do
+  touch /tmp/stay_alive 2>/dev/null
+  sleep 15
+done
+KEOF
+  chmod +x "$KEEP_LOOPF" 2>/dev/null
+  kp="$(cat "$KEEP_PIDF" 2>/dev/null | tr -d ' \r\n')"
+  if [ -n "$kp" ] && kill -0 "$kp" 2>/dev/null; then
+    return 0
+  fi
+  rm -f "$KEEP_PIDF"
+  if command -v setsid >/dev/null 2>&1; then
+    setsid nohup sh "$KEEP_LOOPF" >/dev/null 2>&1 &
+  else
+    nohup sh "$KEEP_LOOPF" >/dev/null 2>&1 &
+  fi
+  echo $! > "$KEEP_PIDF" 2>/dev/null
+  touch /tmp/stay_alive 2>/dev/null
+}
 cmd_stop() {
+  kp="$(cat "$KEEP_PIDF" 2>/dev/null | tr -d ' \r\n')"
+  [ -n "$kp" ] && { kill "$kp" 2>/dev/null; sleep 1; kill -9 "$kp" 2>/dev/null; }
+  rm -f "$KEEP_PIDF" "$KEEP_LOOPF"
+  # Da tat SSH nen: xoa stay_alive de may duoc suspend binh thuong (tiet kiem pin).
+  rm -f /tmp/stay_alive 2>/dev/null
   p="$(running_pid)" || { echo "da dung san"; rm -f "$PIDF"; return 0; }
   kill "$p" 2>/dev/null
   sleep 1

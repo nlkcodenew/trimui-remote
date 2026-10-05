@@ -65,15 +65,9 @@ if [ -x "$APP/bin/remote-ui" ]; then
     [ -x "$APP/screen.sh" ] && sh "$APP/screen.sh" on >> "$LOG" 2>&1 || true
     rm -f /tmp/stay_alive 2>/dev/null
   else
-    # B-thoat (giu SSH nen): GIU stay_alive de auto-suspend khong
-    # giet dropbear/tunnel. Xoa /tmp/stay_alive = mat SSH (da do thuc te).
-    # remote-ui tu sang lai man khi thoat; crash giu den thi lan mo sau sang lai.
-    if sh "$APP/remote.sh" status >/dev/null 2>&1 \
-      || sh "$APP/tunnel.sh" status >/dev/null 2>&1; then
-      touch /tmp/stay_alive 2>/dev/null
-    else
-      rm -f /tmp/stay_alive 2>/dev/null
-    fi
+    # B-thoat (giu SSH nen): /tmp/stay_alive do remote.sh (keepalive-loop)
+    # cham lai 15s nen launch.sh khong can touch o day. Xoa chi khi tat dich vu.
+    sh "$APP/remote.sh" start >> "$LOG" 2>&1 || true
   fi
 fi
 exit 0
