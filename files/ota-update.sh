@@ -20,6 +20,9 @@ if [ ! -f "$APP/VERSION" ] || [ "$(cat "$APP/VERSION" 2>/dev/null | tr -d ' \r\n
 fi
 REPO="${REMOTE_REPO:-nlkcodenew/trimui-remote}"
 CHANNEL="${REMOTE_CHANNEL:-latest}"
+# jsdelivr/raw co cache. Them "?t=<phut>" de OTA LUON thay ban moi nhat
+# thay vi ban da cache (truoc day may bao "da la ban moi nhat" sai).
+CB="$(date +%s 2>/dev/null || echo 0)"; CB=$(( CB / 60 ))
 CA="$APP/certs/cacert.pem"
 LOG="$APP/Remote-ota.log"
 TMPD="$APP/.update_staging"
@@ -115,16 +118,21 @@ MANIFEST_JSON="$TMPD.manifest.json"
 rm -rf "$TMPD" "$MANIFEST_JSON"
 mkdir -p "$TMPD" 2>/dev/null || { say "Không tạo được thư mục tạm"; exit 1; }
 if [ "$CHANNEL" = "latest" ]; then
-  MURL="https://raw.githubusercontent.com/$REPO/main/manifest.json"
+  MBASE="https://raw.githubusercontent.com/$REPO/main"
 else
-  MURL="https://raw.githubusercontent.com/$REPO/$CHANNEL/manifest.json"
+  MBASE="https://raw.githubusercontent.com/$REPO/$CHANNEL"
 fi
+MURL="$MBASE/manifest.json?t=$CB"
+MURL2="https://cdn.jsdelivr.net/gh/$REPO@main/manifest.json?t=$CB"
 say "local=$CUR repo=$REPO channel=$CHANNEL"
 ota_status "checking"
 got_manifest=0
 for try in 1 2; do
-  if fetch "$MURL" "$MANIFEST_JSON" || fetch "https://cdn.jsdelivr.net/gh/$REPO@main/manifest.json" "$MANIFEST_JSON"; then
-    got_manifest=1; break
+  if fetch "$MURL" "$MANIFEST_JSON"; then
+    got_manifest=1; say "nguon manifest: raw.githubusercontent"; break
+  fi
+  if fetch "$MURL2" "$MANIFEST_JSON"; then
+    got_manifest=1; say "nguon manifest: jsdelivr (fallback)"; break
   fi
   [ "$try" = "1" ] && sleep 3
 done
@@ -151,7 +159,11 @@ if [ "${1:-}" = "--check" ]; then
   ota_clear
   exit 10
 fi
+# File trong ZIP co ten co dinh (launch.sh, tunnel.sh...) nen CDN se tra ban CUU
+# neu khong doi duong dan. Them ?t= cho ca 3 nguon.
 BASES="https://raw.githubusercontent.com/$REPO/v$REM/files https://raw.githubusercontent.com/$REPO/main/files https://cdn.jsdelivr.net/gh/$REPO@v$REM/files"
+# Noi them ?t=<phut> vao TUNG nguon (dung sau khi tach bang dau cach)
+BASES="$(echo "$BASES" | sed "s#\([a-zA-Z:/.@-]*\)$#\1?t=$CB#g")"
 if [ "${1:-}" != "--apply" ]; then
   printf "Có bản mới %s (hiện tại %s). Cập nhật? [y/N] " "$REM" "$CUR"
   read -r ans

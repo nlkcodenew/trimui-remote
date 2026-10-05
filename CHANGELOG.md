@@ -1,5 +1,13 @@
 # Changelog — Trimui-Remote
 
+## v0.8.9
+
+- **Chống CDN cache làm OTA tưởng đã là bản mới nhất**: jsdelivr giữ
+  `manifest.json` cũ, máy đọc `remote=0.8.7` rồi bỏ qua bản vừa đẩy. Nay
+  manifest tự thêm tham số `?t=<số phút>` khi tải, nên luôn thấy bản mới nhất
+  thay vì bản đã cache. Ghi log kèm nguồn tải (raw.githubusercontent hay jsdelivr)
+  để khi máy không tải được manifest biết ngay vì sao.
+
 ## v0.8.8
 
 - **README viết lại toàn bộ tiếng Việt có dấu** (trước đó thiếu dấu gần hết).
