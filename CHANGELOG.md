@@ -1,4 +1,10 @@
-# Changelog — Trimui-Remote
+## v0.8.14
+
+- **Sửa tầng cache thứ 3: `raw.githubusercontent` bỏ qua query string** khi tính
+  cache key, nên `?t=` không có tác dụng ở đó và máy vẫn đọc manifest cũ. Nay
+  OTA tải **cả hai** nguồn (raw + jsdelivr), log ra `manifest: raw=X jsdelivr=Y`
+  và tự lấy bản có version **lớn hơn**. Nhờ vậy một nguồn bị cache cũ không còn
+  làm OTA tưởng đã là bản mới nhất.
 
 ## v0.8.13
 

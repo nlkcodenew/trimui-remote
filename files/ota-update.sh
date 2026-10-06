@@ -126,7 +126,8 @@ shell_download_files() {
   return 0
 }
 MANIFEST_JSON="$TMPD.manifest.json"
-rm -rf "$TMPD" "$MANIFEST_JSON"
+MANIFEST_ALT="$TMPD.manifest.alt.json"
+rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT"
 mkdir -p "$TMPD" 2>/dev/null || { say "Không tạo được thư mục tạm"; exit 1; }
 if [ "$CHANNEL" = "latest" ]; then
   MBASE="https://raw.githubusercontent.com/$REPO/main"
@@ -137,36 +138,53 @@ MURL="$MBASE/manifest.json?t=$CB"
 MURL2="https://cdn.jsdelivr.net/gh/$REPO@main/manifest.json?t=$CB"
 say "local=$CUR repo=$REPO channel=$CHANNEL"
 ota_status "checking"
+# raw.githubusercontent BO QUA query string khi tinh cache key nen "?t=" khong
+# co tac dung o do (may van thay manifest cu). Cach chac chan: tai CA HAI
+# nguon roi lay ban co version LON HON.
+parse_ver() {
+  v=""
+  if command -v python3 >/dev/null 2>&1; then
+    v="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1], encoding="utf-8")).get("version",""))' "$1" 2>/dev/null)"
+  fi
+  [ -n "$v" ] || v="$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$1" 2>/dev/null | head -n 1 | sed 's/.*"\([^"]*\)"$/\1/')"
+  echo "$v"
+}
 got_manifest=0
 for try in 1 2; do
-  if fetch "$MURL" "$MANIFEST_JSON"; then
-    got_manifest=1; say "nguon manifest: raw.githubusercontent"; break
-  fi
-  if fetch "$MURL2" "$MANIFEST_JSON"; then
-    got_manifest=1; say "nguon manifest: jsdelivr (fallback)"; break
-  fi
+  if fetch "$MURL" "$MANIFEST_JSON"; then got_manifest=1; fi
+  fetch "$MURL2" "$MANIFEST_ALT" 2>/dev/null
+  [ "$got_manifest" = "1" ] && break
   [ "$try" = "1" ] && sleep 3
 done
-[ "$got_manifest" = "1" ] || { say "Không tải được danh mục bản mới"; ota_clear; exit 1; }
-# Parse version (dung sys.argv, khong loi quote). Fallback grep neu thieu python3.
-REM=""
-if command -v python3 >/dev/null 2>&1; then
-  REM="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1], encoding="utf-8")).get("version",""))' "$MANIFEST_JSON" 2>/dev/null)"
+[ "$got_manifest" = "1" ] || { say "Không tải được danh mục bản mới (mạng yếu hoặc không ra Internet)"; ota_clear; exit 1; }
+REM="$(parse_ver "$MANIFEST_JSON")"
+ALT="$(parse_ver "$MANIFEST_ALT")"
+if [ -n "$ALT" ]; then
+  say "manifest: raw=$REM jsdelivr=$ALT"
+  if [ -z "$REM" ] || ver_newer "$ALT" "$REM"; then
+    cp "$MANIFEST_ALT" "$MANIFEST_JSON" 2>/dev/null
+    REM="$ALT"
+    say "dung manifest moi hon tu jsdelivr ($ALT)"
+  else
+    rm -f "$MANIFEST_ALT" 2>/dev/null
+  fi
+else
+  rm -f "$MANIFEST_ALT" 2>/dev/null
+  say "manifest: raw=$REM (jsdelivr khong tai duoc)"
 fi
-[ -n "$REM" ] || REM="$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$MANIFEST_JSON" 2>/dev/null | head -n 1 | sed 's/.*"\([^"]*\)"$/\1/')"
 [ -n "$REM" ] || { say "Danh mục thiếu số phiên bản"; ota_clear; exit 1; }
 say "remote=$REM"
 if ! ver_newer "$REM" "$CUR"; then
   say "Đã là bản mới nhất ($CUR)"
   # Ghi lai VERSION de binary doc dung (binary cu doc file nay, fallback -DVERSION).
   printf "%s" "$CUR" > "$APP/VERSION" 2>/dev/null || true
-  rm -rf "$TMPD" "$MANIFEST_JSON"
+  rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT"
   ota_clear
   exit 2
 fi
 if [ "${1:-}" = "--check" ]; then
   say "Có bản mới: $REM (đang dùng $CUR). Chạy sh ota-update.sh --apply để cập nhật."
-  rm -rf "$TMPD" "$MANIFEST_JSON"
+  rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT"
   ota_clear
   exit 10
 fi
@@ -179,7 +197,7 @@ BASES="https://raw.githubusercontent.com/$REPO/v$REM/files https://raw.githubuse
 if [ "${1:-}" != "--apply" ]; then
   printf "Có bản mới %s (hiện tại %s). Cập nhật? [y/N] " "$REM" "$CUR"
   read -r ans
-  case "$ans" in y|Y|yes|YES) ;; *) say "Đã hủy"; rm -rf "$TMPD" "$MANIFEST_JSON"; ota_clear; exit 3;; esac
+  case "$ans" in y|Y|yes|YES) ;; *) say "Đã hủy"; rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT"; ota_clear; exit 3;; esac
 fi
 say "Đang tải $REM ..."
 ota_status "downloading $REM"
@@ -231,10 +249,10 @@ if [ "$DL_OK" != "1" ]; then
 fi
 # That bai: xoa file trang thai de LAN SAU app mo lai se thu tiep (khong ghi
 # "failed" vo han, man hinh se bao loi cu khi moi loi da sua xong).
-if [ "$DL_OK" != "1" ]; then say "Tải file thất bại (giữ nguyên bản cũ, lần mở app sau sẽ thử lại)"; rm -rf "$TMPD" "$MANIFEST_JSON"; ota_clear; exit 1; fi
+if [ "$DL_OK" != "1" ]; then say "Tải file thất bại (giữ nguyên bản cũ, lần mở app sau sẽ thử lại)"; rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT"; ota_clear; exit 1; fi
 # Apply: khong dung pipe-while (exit trong subshell khong lan ra ngoai).
 LIST="$TMPD.apply.list"
-(cd "$TMPD" && find . -type f -print > "$LIST") || { say "Cài đặt thất bại"; rm -rf "$TMPD" "$MANIFEST_JSON"; ota_clear; exit 1; }
+(cd "$TMPD" && find . -type f -print > "$LIST") || { say "Cài đặt thất bại"; rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT"; ota_clear; exit 1; }
 APPLY_FAIL=0
 while IFS= read -r f; do
   [ -n "$f" ] || continue
@@ -248,7 +266,7 @@ while IFS= read -r f; do
   case "$rel" in *.sh|bin/*) chmod +x "$tmp" 2>/dev/null;; esac
   if ! mv "$tmp" "$dst" 2>/dev/null; then say "Cài đặt thất bại: $rel"; APPLY_FAIL=1; break; fi
 done < "$LIST"
-if [ "$APPLY_FAIL" != "0" ]; then rm -rf "$TMPD" "$MANIFEST_JSON"; ota_clear; exit 1; fi
+if [ "$APPLY_FAIL" != "0" ]; then rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT"; ota_clear; exit 1; fi
 cd "$APP" || exit 1
 printf "%s" "$REM" | tr -d " \r\n" > "$APP/VERSION" 2>/dev/null
 # Xac nhan sau khi cai: doc lai VERSION + so sanh. Khong dung "da xong" khi
@@ -256,12 +274,12 @@ printf "%s" "$REM" | tr -d " \r\n" > "$APP/VERSION" 2>/dev/null
 GOTV="$(cat "$APP/VERSION" 2>/dev/null | tr -d ' \r\n')"
 if [ "$GOTV" != "$REM" ]; then
   say "LỖI: VERSION sau khi cài là '$GOTV', cần '$REM'. Giữ nguyên bản cũ."
-  rm -rf "$TMPD" "$MANIFEST_JSON" "$LIST" "$TMPD.dl.tmp"
+  rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT" "$LIST" "$TMPD.dl.tmp"
   ota_clear
   exit 1
 fi
 say "Cập nhật xong $CUR -> $REM (đã kiểm tra VERSION). Thoát app và mở lại."
 ota_status "done $REM"
 # $LIST nam canh $TMPD (khong phai ben trong) nen phai xoa rieng.
-rm -rf "$TMPD" "$MANIFEST_JSON" "$LIST" "$TMPD.dl.tmp"
+rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT" "$LIST" "$TMPD.dl.tmp"
 exit 0
