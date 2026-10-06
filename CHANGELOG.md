@@ -1,4 +1,15 @@
-# Changelog — Trimui-Remote
+## v0.8.16
+
+- **Thêm nguồn thứ ba: GitHub API** (`api.github.com/repos/.../contents/manifest.json`).
+  Cả `raw.githubusercontent` và `jsdelivr` đều cache rất lâu và **bỏ qua query
+  string**, nên sau khi đẩy bản mới máy vẫn đọc manifest cũ (đã kiểm chứng: cả
+  PC lẫn máy đều thấy 0.8.14 trong khi repo đã có 0.8.15). Nay OTA đọc **ba**
+  nguồn, log ra `manifest: raw=X jsdelivr=Y api=Z` và tự lấy bản có version lớn
+  hơn — nên OTA không còn phụ thuộc việc purge CDN thủ công.
+- **`verify_release.py` chặn quên commit manifest**: trước đó đã có lần đẩy
+  `VERSION` lên 0.8.15 nhưng quên `git add manifest.json`, khiến máy mãi thấy
+  0.8.14 mà không có cảnh báo. Nay release chỉ qua được khi `manifest.json`
+  khớp `VERSION` và có đủ file quan trọng.
 
 ## v0.8.15
 

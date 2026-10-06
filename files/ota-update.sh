@@ -125,22 +125,35 @@ shell_download_files() {
   say "Đã tải xong $n file"
   return 0
 }
+# GitHub API tra ve file RAW (khong base64) khi gui Accept nay. Nguon nay
+# khong bi cache nhoi raw.githubusercontent, nen la du phong chinh khi ca
+# raw.githubusercontent va jsdelivr deu tra ban CU.
+fetch_api() {
+  command -v curl >/dev/null 2>&1 || return 1
+  curl -fsSL -H 'Accept: application/vnd.github.raw' \
+    --connect-timeout 5 --max-time 12 -o "$2" "$1" 2>/dev/null
+}
+
 MANIFEST_JSON="$TMPD.manifest.json"
 MANIFEST_ALT="$TMPD.manifest.alt.json"
-rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT"
+MANIFEST_API="$TMPD.manifest.api.json"
+rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT" "$MANIFEST_API"
 mkdir -p "$TMPD" 2>/dev/null || { say "Không tạo được thư mục tạm"; exit 1; }
 if [ "$CHANNEL" = "latest" ]; then
   MBASE="https://raw.githubusercontent.com/$REPO/main"
+  CHANNEL_REF="main"
 else
   MBASE="https://raw.githubusercontent.com/$REPO/$CHANNEL"
+  CHANNEL_REF="$CHANNEL"
 fi
 MURL="$MBASE/manifest.json?t=$CB"
 MURL2="https://cdn.jsdelivr.net/gh/$REPO@main/manifest.json?t=$CB"
+MURL3="https://api.github.com/repos/$REPO/contents/manifest.json?ref=$CHANNEL_REF"
 say "local=$CUR repo=$REPO channel=$CHANNEL"
 ota_status "checking"
-# raw.githubusercontent BO QUA query string khi tinh cache key nen "?t=" khong
-# co tac dung o do (may van thay manifest cu). Cach chac chan: tai CA HAI
-# nguon roi lay ban co version LON HON.
+# raw.githubusercontent BO QUA query string khi tinh cache key (va cache rat
+# lau) nen "?t=" khong co tac dung o do. Cach chac chan: tai CA BA nguon
+# (raw, jsdelivr, GitHub API) roi lay ban co version LON HON.
 parse_ver() {
   v=""
   if command -v python3 >/dev/null 2>&1; then
@@ -153,25 +166,36 @@ got_manifest=0
 for try in 1 2; do
   if fetch "$MURL" "$MANIFEST_JSON"; then got_manifest=1; fi
   fetch "$MURL2" "$MANIFEST_ALT" 2>/dev/null
+  fetch_api "$MURL3" "$MANIFEST_API" 2>/dev/null
   [ "$got_manifest" = "1" ] && break
   [ "$try" = "1" ] && sleep 3
 done
+# raw that bai nhung API van duoc -> van chay duoc.
+if [ "$got_manifest" != "1" ] && [ -s "$MANIFEST_API" ]; then
+  cp "$MANIFEST_API" "$MANIFEST_JSON" 2>/dev/null && got_manifest=1 && say "raw khong tai duoc, dung manifest tu GitHub API"
+fi
 [ "$got_manifest" = "1" ] || { say "Không tải được danh mục bản mới (mạng yếu hoặc không ra Internet)"; ota_clear; exit 1; }
 REM="$(parse_ver "$MANIFEST_JSON")"
 ALT="$(parse_ver "$MANIFEST_ALT")"
-if [ -n "$ALT" ]; then
-  say "manifest: raw=$REM jsdelivr=$ALT"
-  if [ -z "$REM" ] || ver_newer "$ALT" "$REM"; then
-    cp "$MANIFEST_ALT" "$MANIFEST_JSON" 2>/dev/null
-    REM="$ALT"
-    say "dung manifest moi hon tu jsdelivr ($ALT)"
-  else
-    rm -f "$MANIFEST_ALT" 2>/dev/null
-  fi
-else
-  rm -f "$MANIFEST_ALT" 2>/dev/null
-  say "manifest: raw=$REM (jsdelivr khong tai duoc)"
-fi
+APIV="$(parse_ver "$MANIFEST_API")"
+say "manifest: raw=$REM jsdelivr=$ALT api=$APIV"
+# Chon ban co version LON HON trong ca 3 nguon (mot nguon bi cache cu khong
+# lam OTA tuong da la ban moi nhat nua).
+BESTV="$REM"
+BESTSRC="raw"
+pick_src() {
+  [ -n "$1" ] || return 0
+  if [ -z "$BESTV" ] || ver_newer "$1" "$BESTV"; then BESTV="$1"; BESTSRC="$2"; fi
+}
+pick_src "$ALT" "jsdelivr"
+pick_src "$APIV" "api"
+case "$BESTSRC" in
+  jsdelivr) cp "$MANIFEST_ALT" "$MANIFEST_JSON" 2>/dev/null; say "dung manifest moi hon ($BESTSRC $BESTV)";;
+  api) cp "$MANIFEST_API" "$MANIFEST_JSON" 2>/dev/null; say "dung manifest moi hon ($BESTSRC $BESTV)";;
+  raw) say "dung manifest tu raw ($BESTV)";;
+esac
+REM="$BESTV"
+rm -f "$MANIFEST_ALT" "$MANIFEST_API" 2>/dev/null
 [ -n "$REM" ] || { say "Danh mục thiếu số phiên bản"; ota_clear; exit 1; }
 say "remote=$REM"
 if ! ver_newer "$REM" "$CUR"; then
