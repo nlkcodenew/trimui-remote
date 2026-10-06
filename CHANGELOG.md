@@ -1,3 +1,11 @@
+# Changelog — Trimui-Remote
+
+## v0.8.15
+
+- **Nới thời gian chờ OTA từ 90s lên 300s**: 20 file (~2,4MB) trên WiFi chậm mà
+  mỗi nguồn thử 2 lần thì dễ bị cắt giữa chừng, OTA không kịp cài xong. OTA
+  chạy nền nên kéo dài không làm treo màn hình.
+
 ## v0.8.14
 
 - **Sửa tầng cache thứ 3: `raw.githubusercontent` bỏ qua query string** khi tính

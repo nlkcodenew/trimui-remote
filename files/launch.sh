@@ -24,7 +24,10 @@ fi
 # Tat bang REMOTE_NO_OTA=1.
 if [ "$REMOTE_NO_OTA" != "1" ] && [ -x "$APP/ota-update.sh" ]; then
   if command -v timeout >/dev/null 2>&1; then
-    timeout 90 sh "$APP/ota-update.sh" --apply >> "$APP/Remote-ota.log" 2>&1 &
+    # 90s la qua ngan: 20 file (~2.4MB) tren WiFi cham + 2 lan thu moi nguon
+    # se bi cat giua chung va khong bao gi apply duoc. OTA chay NEN nen keo
+    # thoi gian lai khong lam treu man hinh.
+    timeout 300 sh "$APP/ota-update.sh" --apply >> "$APP/Remote-ota.log" 2>&1 &
   else
     sh "$APP/ota-update.sh" --apply >> "$APP/Remote-ota.log" 2>&1 &
   fi
