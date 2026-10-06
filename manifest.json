@@ -1,11 +1,11 @@
 {
-  "version": "0.8.14",
+  "version": "0.8.15",
   "app": "trimui-remote",
-  "built": "2026-10-06T08:40:13+07:00",
+  "built": "2026-10-06T08:51:08+07:00",
   "files": [
     {
       "path": "VERSION",
-      "sha256": "af0c015a6470ca542b68d7084a55652bee7798013d87487cd05fac1484a25980",
+      "sha256": "8517de55d0fc1041caab07518dbf7da86dba47c3befe0a6ef84d005872cb799d",
       "size": 7
     },
     {
@@ -25,8 +25,8 @@
     },
     {
       "path": "launch.sh",
-      "sha256": "44a13f825cbf39239092ba233069d1d3cf1ce7ab4662b36b6c82b283c576f386",
-      "size": 2798
+      "sha256": "74f6e637dc9e4384c65bd8c047eb592d7104c1b287f4c1cc0060e63b6d107ec3",
+      "size": 2997
     },
     {
       "path": "net-survey.sh",
@@ -105,8 +105,8 @@
     }
   ],
   "release_asset": {
-    "name": "trimui-remote-v0.8.14.zip",
-    "sha256": "d2f1e6536a288e8f87024681743af2b10cafd26165628e919b67d0df93b72497",
-    "size": 1197192
+    "name": "trimui-remote-v0.8.15.zip",
+    "sha256": "811cd6ac14a1bc64272808657be5c9429a3e4d25f06e5b7d10765d2f395578e6",
+    "size": 1197292
   }
 }

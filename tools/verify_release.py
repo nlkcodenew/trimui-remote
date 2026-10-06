@@ -38,6 +38,17 @@ def main():
     shipped = os.path.join(ROOT, "files", "VERSION")
     shipped_version = open(shipped, encoding="utf-8").read().strip() if os.path.isfile(shipped) else ""
     check(shipped_version == version, "files/VERSION khop VERSION (%r)" % shipped_version)
+    # manifest.json la thu may doc trong OTA. Phai khop VERSION, neu khong
+    # may se bao "da la ban moi nhat" ma ban moi chua duoc day len GitHub.
+    mpath = os.path.join(ROOT, "manifest.json")
+    if os.path.isfile(mpath):
+        with open(mpath, encoding="utf-8") as h:
+            man = json.load(h)
+        check(man.get("version") == version,
+              "manifest.json khop VERSION (manifest=%r)" % man.get("version"))
+        paths = {e["path"] for e in man.get("files", [])}
+        for req in ("VERSION", "ota-update.sh", "launch.sh"):
+            check(req in paths, "manifest.json co %s" % req)
     cfg = json.load(open(os.path.join(ROOT, "files", "config.json"), encoding="utf-8"))
     check(cfg.get("launch") == "launch.sh", "config.json tro dung launch.sh")
     for sh in ("launch.sh", "remote.sh", "tunnel.sh", "show-status.sh", "screen.sh", "net-survey.sh", "collect-logs.sh"):
