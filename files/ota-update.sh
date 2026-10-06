@@ -102,13 +102,13 @@ shell_download_files() {
     # Thu tu nhieu nguon + 2 lan moi nguon: mang yeu/CDN cham thi van tai duoc.
     for b in $BASES; do
       for try in 1 2; do
-        if fetch "$b/$rel" "$TMPD.dl.tmp"; then
+        if fetch "$b/$rel?$Q" "$TMPD.dl.tmp"; then
           have="$(sha256sum "$TMPD.dl.tmp" 2>/dev/null | cut -d' ' -f1)"
           if [ "$have" = "$want" ]; then got="$TMPD.dl.tmp"; break; fi
           say "Sai mã kiểm tra ($b) $rel, thử lại"
           rm -f "$TMPD.dl.tmp"
         else
-          say "tải hỏng ($b) $rel"
+          say "tải hỏng ($b/$rel?$Q)"
         fi
       done
       [ -n "$got" ] && break
@@ -171,14 +171,11 @@ if [ "${1:-}" = "--check" ]; then
   exit 10
 fi
 # File trong ZIP co ten co dinh (launch.sh, tunnel.sh...) nen CDN se tra ban CUU
-# neu khong doi duong dan. Them ?t=<phut> cho ca 3 nguon.
-# KHONG dung sed: busybox sed tren may bao "unmatched '#'" lam BASES hong,
-# khong tai duoc file nao. Ghép URL bang vong lap shell thuan.
-BASES_RAW="https://raw.githubusercontent.com/$REPO/v$REM/files https://raw.githubusercontent.com/$REPO/main/files https://cdn.jsdelivr.net/gh/$REPO@v$REM/files"
-BASES=""
-for b in $BASES_RAW; do
-  BASES="$BASES $b?t=$CB"
-done
+# neu khong doi duong dan. Them "?t=<phut>" o CUOI URL cua tung FILE (khong gan
+# vao base, gan vao base se ra ".../files?t=123/VERSION" - sai hoan toan).
+# KHONG dung sed: busybox sed tren may bao "unmatched '#'" lam BASES hong.
+Q="t=$CB"
+BASES="https://raw.githubusercontent.com/$REPO/v$REM/files https://raw.githubusercontent.com/$REPO/main/files https://cdn.jsdelivr.net/gh/$REPO@v$REM/files"
 if [ "${1:-}" != "--apply" ]; then
   printf "Có bản mới %s (hiện tại %s). Cập nhật? [y/N] " "$REM" "$CUR"
   read -r ans
@@ -188,9 +185,9 @@ say "Đang tải $REM ..."
 ota_status "downloading $REM"
 DL_OK=0
 if command -v python3 >/dev/null 2>&1; then
-python3 - "$MANIFEST_JSON" "$TMPD" "$BASES" "$CA" <<PYEOF && DL_OK=1
+python3 - "$MANIFEST_JSON" "$TMPD" "$BASES" "$CA" "$Q" <<PYEOF && DL_OK=1
 import hashlib, os, ssl, sys, json, urllib.request
-mp, tmpd, bases, ca = sys.argv[1], sys.argv[2], sys.argv[3].split(), sys.argv[4]
+mp, tmpd, bases, ca, q = sys.argv[1], sys.argv[2], sys.argv[3].split(), sys.argv[4], sys.argv[5]
 man = json.load(open(mp, encoding="utf-8"))
 files = man.get("files", [])
 def sha(b): return hashlib.sha256(b).hexdigest()
@@ -210,7 +207,7 @@ for e in files:
     data = None
     for b in bases:
         try:
-            data = get(b.rstrip("/") + "/" + e["path"])
+            data = get(b.rstrip("/") + "/" + e["path"] + "?" + q)
             break
         except Exception:
             continue
