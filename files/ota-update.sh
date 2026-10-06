@@ -130,7 +130,9 @@ shell_download_files() {
 # raw.githubusercontent va jsdelivr deu tra ban CU.
 fetch_api() {
   command -v curl >/dev/null 2>&1 || return 1
+  # GitHub API tra 403 neu KHONG co header User-Agent.
   curl -fsSL -H 'Accept: application/vnd.github.raw' \
+    -H 'User-Agent: trimui-remote-ota' \
     --connect-timeout 5 --max-time 12 -o "$2" "$1" 2>/dev/null
 }
 

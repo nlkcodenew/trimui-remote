@@ -1,3 +1,11 @@
+# Changelog — Trimui-Remote
+
+## v0.8.17
+
+- **Thêm header `User-Agent` khi gọi GitHub API**: API trả `403` khi thiếu
+  header này nên nguồn dự phòng thứ ba im lặng không hoạt động (log cho thấy
+  `api=` rỗng). Nay cả ba nguồn đều dùng được.
+
 ## v0.8.16
 
 - **Thêm nguồn thứ ba: GitHub API** (`api.github.com/repos/.../contents/manifest.json`).
