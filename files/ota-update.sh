@@ -99,10 +99,21 @@ shell_download_files() {
     rel="${e%%|*}"; want="${e##*|}"
     [ -n "$rel" ] && [ -n "$want" ] || return 1
     got=""
+    # Thu tu nhieu nguon + 2 lan moi nguon: mang yeu/CDN cham thi van tai duoc.
     for b in $BASES; do
-      if fetch "$b/$rel" "$TMPD.dl.tmp"; then got="$TMPD.dl.tmp"; break; fi
+      for try in 1 2; do
+        if fetch "$b/$rel" "$TMPD.dl.tmp"; then
+          have="$(sha256sum "$TMPD.dl.tmp" 2>/dev/null | cut -d' ' -f1)"
+          if [ "$have" = "$want" ]; then got="$TMPD.dl.tmp"; break; fi
+          say "Sai mã kiểm tra ($b) $rel, thử lại"
+          rm -f "$TMPD.dl.tmp"
+        else
+          say "tải hỏng ($b) $rel"
+        fi
+      done
+      [ -n "$got" ] && break
     done
-    [ -n "$got" ] || { say "Không tải được: $rel"; return 1; }
+    [ -n "$got" ] || { say "Không tải được file $rel từ mọi nguồn"; return 1; }
     have="$(sha256sum "$got" 2>/dev/null | cut -d' ' -f1)"
     if [ "$have" != "$want" ]; then say "Sai mã kiểm tra: $rel"; rm -f "$got"; return 1; fi
     dst="$TMPD/$rel"
@@ -136,14 +147,14 @@ for try in 1 2; do
   fi
   [ "$try" = "1" ] && sleep 3
 done
-[ "$got_manifest" = "1" ] || { say "Không tải được danh mục bản mới"; ota_status "failed"; exit 1; }
+[ "$got_manifest" = "1" ] || { say "Không tải được danh mục bản mới"; ota_clear; exit 1; }
 # Parse version (dung sys.argv, khong loi quote). Fallback grep neu thieu python3.
 REM=""
 if command -v python3 >/dev/null 2>&1; then
   REM="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1], encoding="utf-8")).get("version",""))' "$MANIFEST_JSON" 2>/dev/null)"
 fi
 [ -n "$REM" ] || REM="$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$MANIFEST_JSON" 2>/dev/null | head -n 1 | sed 's/.*"\([^"]*\)"$/\1/')"
-[ -n "$REM" ] || { say "Danh mục thiếu số phiên bản"; ota_status "failed"; exit 1; }
+[ -n "$REM" ] || { say "Danh mục thiếu số phiên bản"; ota_clear; exit 1; }
 say "remote=$REM"
 if ! ver_newer "$REM" "$CUR"; then
   say "Đã là bản mới nhất ($CUR)"
@@ -160,10 +171,14 @@ if [ "${1:-}" = "--check" ]; then
   exit 10
 fi
 # File trong ZIP co ten co dinh (launch.sh, tunnel.sh...) nen CDN se tra ban CUU
-# neu khong doi duong dan. Them ?t= cho ca 3 nguon.
-BASES="https://raw.githubusercontent.com/$REPO/v$REM/files https://raw.githubusercontent.com/$REPO/main/files https://cdn.jsdelivr.net/gh/$REPO@v$REM/files"
-# Noi them ?t=<phut> vao TUNG nguon (dung sau khi tach bang dau cach)
-BASES="$(echo "$BASES" | sed "s#\([a-zA-Z:/.@-]*\)$#\1?t=$CB#g")"
+# neu khong doi duong dan. Them ?t=<phut> cho ca 3 nguon.
+# KHONG dung sed: busybox sed tren may bao "unmatched '#'" lam BASES hong,
+# khong tai duoc file nao. Ghép URL bang vong lap shell thuan.
+BASES_RAW="https://raw.githubusercontent.com/$REPO/v$REM/files https://raw.githubusercontent.com/$REPO/main/files https://cdn.jsdelivr.net/gh/$REPO@v$REM/files"
+BASES=""
+for b in $BASES_RAW; do
+  BASES="$BASES $b?t=$CB"
+done
 if [ "${1:-}" != "--apply" ]; then
   printf "Có bản mới %s (hiện tại %s). Cập nhật? [y/N] " "$REM" "$CUR"
   read -r ans
@@ -217,10 +232,12 @@ if [ "$DL_OK" != "1" ]; then
   say "Thử tải bằng shell (máy không có python3)..."
   if shell_download_files; then DL_OK=1; fi
 fi
-if [ "$DL_OK" != "1" ]; then say "Tải file thất bại"; rm -rf "$TMPD" "$MANIFEST_JSON"; ota_status "failed"; exit 1; fi
+# That bai: xoa file trang thai de LAN SAU app mo lai se thu tiep (khong ghi
+# "failed" vo han, man hinh se bao loi cu khi moi loi da sua xong).
+if [ "$DL_OK" != "1" ]; then say "Tải file thất bại (giữ nguyên bản cũ, lần mở app sau sẽ thử lại)"; rm -rf "$TMPD" "$MANIFEST_JSON"; ota_clear; exit 1; fi
 # Apply: khong dung pipe-while (exit trong subshell khong lan ra ngoai).
 LIST="$TMPD.apply.list"
-(cd "$TMPD" && find . -type f -print > "$LIST") || { say "Cài đặt thất bại"; rm -rf "$TMPD" "$MANIFEST_JSON"; ota_status "failed"; exit 1; }
+(cd "$TMPD" && find . -type f -print > "$LIST") || { say "Cài đặt thất bại"; rm -rf "$TMPD" "$MANIFEST_JSON"; ota_clear; exit 1; }
 APPLY_FAIL=0
 while IFS= read -r f; do
   [ -n "$f" ] || continue
@@ -234,10 +251,19 @@ while IFS= read -r f; do
   case "$rel" in *.sh|bin/*) chmod +x "$tmp" 2>/dev/null;; esac
   if ! mv "$tmp" "$dst" 2>/dev/null; then say "Cài đặt thất bại: $rel"; APPLY_FAIL=1; break; fi
 done < "$LIST"
-if [ "$APPLY_FAIL" != "0" ]; then rm -rf "$TMPD" "$MANIFEST_JSON"; ota_status "failed"; exit 1; fi
+if [ "$APPLY_FAIL" != "0" ]; then rm -rf "$TMPD" "$MANIFEST_JSON"; ota_clear; exit 1; fi
 cd "$APP" || exit 1
 printf "%s" "$REM" | tr -d " \r\n" > "$APP/VERSION" 2>/dev/null
-say "Cập nhật xong $CUR -> $REM. Thoát app và mở lại."
+# Xac nhan sau khi cai: doc lai VERSION + so sanh. Khong dung "da xong" khi
+# khong khop (truong hop duy nhat ma file VERSION bi ghi hong).
+GOTV="$(cat "$APP/VERSION" 2>/dev/null | tr -d ' \r\n')"
+if [ "$GOTV" != "$REM" ]; then
+  say "LỖI: VERSION sau khi cài là '$GOTV', cần '$REM'. Giữ nguyên bản cũ."
+  rm -rf "$TMPD" "$MANIFEST_JSON" "$LIST" "$TMPD.dl.tmp"
+  ota_clear
+  exit 1
+fi
+say "Cập nhật xong $CUR -> $REM (đã kiểm tra VERSION). Thoát app và mở lại."
 ota_status "done $REM"
 # $LIST nam canh $TMPD (khong phai ben trong) nen phai xoa rieng.
 rm -rf "$TMPD" "$MANIFEST_JSON" "$LIST" "$TMPD.dl.tmp"

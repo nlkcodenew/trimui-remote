@@ -1,5 +1,20 @@
 # Changelog — Trimui-Remote
 
+## v0.8.12
+
+- **Sửa lỗi OTA tự hỏng từ 0.8.9** (phát hiện trên log máy thật): dòng ghép URL
+  chống cache bằng `sed` bị busybox trên máy báo `sed: unmatched '#'`, khiến
+  `BASES` thành chuỗi hỏng và **không tải được file nào**
+  (`Không tải được: VERSION`). Máy không có python3 nên rơi đúng vào nhánh
+  dùng `BASES` đó nên hỏng hoàn toàn. Nay ghép URL bằng vòng lặp shell thuần.
+- **Tải file chuẩn hơn**: mỗi nguồn thử tối đa 2 lần, kiểm tra `sha256` ngay
+  khi tải xong, log rõ dòng lỗi kèm URL nguồn đang thử (trước đây chỉ in tên
+  file nên không biết hỏng ở đâu).
+- **Xác nhận sau khi cài**: đọc lại `VERSION` và so với bản mới; lệch thì báo
+  lỗi và giữ bản cũ, không báo "cập nhật xong" sai.
+- **Lỗi tạm thời không đọng vô hạn**: hết trạng thái `failed` trong `.ota-status`
+  khi thất bại, để lần mở app sau tự thử lại thay vì im lặng mãi.
+
 ## v0.8.11
 
 - **Vì sao sau khi reboot là mất remote, và cách hết bị**: khi máy mất mạng rồi
