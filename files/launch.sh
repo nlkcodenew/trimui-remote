@@ -65,6 +65,8 @@ if [ -x "$APP/bin/remote-ui" ]; then
     # khong can user thoat app bang tay.
     if [ "$UIRC" = "42" ]; then
       echo "ota: UI restart after update" >> "$LOG" 2>&1
+      # Xoa tin hieu "done": khong thi UI moi thay lai va restart vo han.
+      rm -f "$APP/.ota-status" "$APP/.ota-status.tmp" 2>/dev/null
       VER="$(cat "$APP/VERSION" 2>/dev/null | tr -d ' \r\n')"
       IP="$(sh "$APP/remote.sh" ip 2>/dev/null)"
       sh "$APP/show-status.sh" --file-only >> "$LOG" 2>&1

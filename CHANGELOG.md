@@ -1,5 +1,10 @@
 # Changelog — Trimui-Remote
 
+## v0.8.21
+
+- **Sửa restart vô hạn sau OTA**: launch.sh xóa file `.ota-status` sau khi
+  nhận exit 42 từ UI, tránh UI mới thấy lại tín hiệu "done" và restart mãi.
+
 ## v0.8.20
 
 - **Sửa OTA không bao giờ tải được bản mới**: máy không có CA certificates hệ
