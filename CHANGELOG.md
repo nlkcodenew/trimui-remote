@@ -1,5 +1,11 @@
 # Changelog — Trimui-Remote
 
+## v0.8.18
+
+- **Sửa dropbear không khởi động được khi có data/authorized_keys**: remote.sh truyền `-a <file>` cho dropbear, nhưng `-a` của dropbear 2024.86 là "allow forwarded ports from any host" — không phải đường dẫn authorized_keys — khiến dropbear báo Invalid argument và thoát ngay. Nay bỏ `-a`, copy data/authorized_keys vào /root/.ssh/authorized_keys (chmod 700/600) mỗi lần app chạy; nếu không ghi được thì dùng password auth như cũ. Đồng thời sinh host key trong /tmp rồi cp sang thẻ (tránh lỗi rename trên FAT).
+- **Nút Y tắt màn hình trên Smart Pro S**: máy không có /dev/disp nên disp_set() trong remote-ui và screen.sh đều thất bại. Nay thêm fallback sysfs backlight (/sys/class/backlight/backlight0/brightness), đọc độ sáng hiện tại trực tiếp từ sysfs.
+
+
 ## v0.8.17
 
 - **Thêm header `User-Agent` khi gọi GitHub API**: API trả `403` khi thiếu

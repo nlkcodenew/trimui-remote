@@ -3,7 +3,8 @@
  * - Nut B (joystick button 0) lan 1: hien panel xac nhan TO giua man hinh.
  *   Nut B lan 2 trong 4s: thoat. Thoat man hinh KHONG tat dich vu nen.
  * - Nut Y (button 2) / phim y: TAT DEN man hinh kieu Music Player
- *   (ioctl /dev/disp 0x102 ve 0, may van thuc + WiFi song, khac Power=suspend).
+ *   (Brick Pro: ioctl /dev/disp 0x102 ve 0; Smart Pro S: sysfs backlight;
+ *   may van thuc + WiFi song, khac Power=suspend).
  *   Bam phim bat ky de sang lai. Luc tat chi Delay 100ms, khong ve gi.
  * - Du phong: SELECT(8)+START(9) cung luc = thoat ngay; ESC tren ban phim cung vay.
  * - Endpoint Internet (VPS co dinh / Pinggy) duoc poll tu tunnel.sh moi 2s.
@@ -11,6 +12,7 @@
  */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <errno.h>
@@ -37,14 +39,59 @@ static int disp_saved_brightness = -1;
 static int disp_is_off = 0;
 static char disp_recovery[768];
 
+/* Smart Pro S khong co /dev/disp -> dung sysfs backlight.
+ * Tim 1 lan duy nhat, giu duong dan + max_brightness. */
+static char bl_path[256] = "";
+static int bl_max = 255;
+static void bl_find(void) {
+    static int done = 0;
+    if (done) return;
+    done = 1;
+    DIR *d = opendir("/sys/class/backlight");
+    if (!d) return;
+    struct dirent *e;
+    while ((e = readdir(d))) {
+        if (e->d_name[0] == '.') continue;
+        snprintf(bl_path, sizeof(bl_path),
+                 "/sys/class/backlight/%s/brightness", e->d_name);
+        if (access(bl_path, W_OK) == 0) {
+            char mp[300];
+            snprintf(mp, sizeof(mp),
+                     "/sys/class/backlight/%s/max_brightness", e->d_name);
+            FILE *f = fopen(mp, "r");
+            if (f) {
+                if (fscanf(f, "%d", &bl_max) != 1 || bl_max <= 0) bl_max = 255;
+                fclose(f);
+            }
+            break;
+        }
+        bl_path[0] = '\0';
+    }
+    closedir(d);
+}
+
+static int bl_set(int value) {
+    bl_find();
+    if (!bl_path[0]) return 0;
+    int v = (bl_max == 255) ? value : value * bl_max / 255;
+    FILE *f = fopen(bl_path, "w");
+    if (!f) return 0;
+    int ok = fprintf(f, "%d\n", v) > 0;
+    fclose(f);
+    return ok;
+}
+
 static int disp_set(int value) {
     int fd = open(DISP_DEV, O_RDWR);
-    if (fd < 0) return 0;
-    unsigned long p[4];
-    p[0] = 0; p[1] = (unsigned long)value; p[2] = 0; p[3] = 0;
-    int rc = ioctl(fd, DISP_LCD_SET_BRIGHTNESS, p);
-    close(fd);
-    return rc == 0;
+    if (fd >= 0) {
+        unsigned long p[4];
+        p[0] = 0; p[1] = (unsigned long)value; p[2] = 0; p[3] = 0;
+        int rc = ioctl(fd, DISP_LCD_SET_BRIGHTNESS, p);
+        close(fd);
+        if (rc == 0) return 1;
+    }
+    /* /dev/disp khong co hoac ioctl that bai (Smart Pro S): sysfs. */
+    return bl_set(value);
 }
 
 static int disp_read_saved(void) {

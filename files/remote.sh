@@ -64,29 +64,49 @@ cmd_start() {
     return 1
   }
   # Sinh host-key 1 lan duy nhat, giu trong data/ (song sot qua OTA).
-  if [ ! -f "$KEYF" ]; then
+  # The FAT/exFAT khong ho tro cach dropbearkey doi ten file tam (ENOSYS)
+  # nen sinh ra /tmp (tmpfs) roi cp sang data/.
+  if [ ! -f "$KEYF" ] || [ ! -s "$KEYF" ]; then
+    rm -f "$KEYF" 2>/dev/null
+    TMPKEY="/tmp/dropbear_host_key.$$"
     if command -v dropbearkey >/dev/null 2>&1; then
-      dropbearkey -t ed25519 -f "$KEYF" >> "$LOG" 2>&1 || rm -f "$KEYF"
+      dropbearkey -t ed25519 -f "$TMPKEY" >> "$LOG" 2>&1 && cp "$TMPKEY" "$KEYF" 2>/dev/null
     elif [ -x "$APP/bin/dropbearkey" ]; then
-      "$APP/bin/dropbearkey" -t ed25519 -f "$KEYF" >> "$LOG" 2>&1 || rm -f "$KEYF"
+      "$APP/bin/dropbearkey" -t ed25519 -f "$TMPKEY" >> "$LOG" 2>&1 && cp "$TMPKEY" "$KEYF" 2>/dev/null
     fi
+    rm -f "$TMPKEY" 2>/dev/null
+    [ -s "$KEYF" ] || echo "LOI: khong tao duoc host key" >> "$LOG" 2>&1
   fi
   # Khoa public cua nguoi ho tro (ban copy file authorized_keys vao data/).
-  KEYS_ARG=""
-  [ -f "$AUTHKEYS" ] && KEYS_ARG="-a $AUTHKEYS"
+  # CHU Y: dropbear server KHONG co option chi dinh authorized_keys -
+  # "-a" cua no la "allow forward tu moi host", truyen "-a <file>" lam
+  # dropbear bao "Invalid argument" va tu choi chay (bug tim ra 2026-10-14
+  # tren Smart Pro S). No luon doc ~/.ssh/authorized_keys nen phai copy
+  # vao /root/.ssh. The FAT khong giu duoc chmod 600 (moi file deu 0777)
+  # nen khong de file o data/ ma copy vao /root/.ssh (fs that) roi chmod.
+  if [ -f "$AUTHKEYS" ]; then
+    if mkdir -p /root/.ssh 2>/dev/null \
+       && cp "$AUTHKEYS" /root/.ssh/authorized_keys 2>/dev/null \
+       && chmod 700 /root/.ssh 2>/dev/null \
+       && chmod 600 /root/.ssh/authorized_keys 2>/dev/null; then
+      echo "da cai authorized_keys vao /root/.ssh/" >> "$LOG" 2>&1
+    else
+      echo "BO QUA authorized_keys (se dung mat khau root)" >> "$LOG" 2>&1
+    fi
+  fi
   rm -f "$PIDF"
   # Chay nen that su: setsid + nohup de song sot khi launch.sh thoat ve menu.
   if command -v setsid >/dev/null 2>&1; then
     if [ -f "$KEYF" ]; then
-      setsid nohup "$DB" -p "$PORT" -r "$KEYF" $KEYS_ARG -P "$PIDF" >> "$LOG" 2>&1 &
+      setsid nohup "$DB" -p "$PORT" -r "$KEYF" -P "$PIDF" >> "$LOG" 2>&1 &
     else
-      setsid nohup "$DB" -p "$PORT" $KEYS_ARG -P "$PIDF" >> "$LOG" 2>&1 &
+      setsid nohup "$DB" -p "$PORT" -P "$PIDF" >> "$LOG" 2>&1 &
     fi
   else
     if [ -f "$KEYF" ]; then
-      nohup "$DB" -p "$PORT" -r "$KEYF" $KEYS_ARG -P "$PIDF" >> "$LOG" 2>&1 &
+      nohup "$DB" -p "$PORT" -r "$KEYF" -P "$PIDF" >> "$LOG" 2>&1 &
     else
-      nohup "$DB" -p "$PORT" $KEYS_ARG -P "$PIDF" >> "$LOG" 2>&1 &
+      nohup "$DB" -p "$PORT" -P "$PIDF" >> "$LOG" 2>&1 &
     fi
   fi
   sleep 1

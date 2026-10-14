@@ -5,15 +5,23 @@
 #   sh screen.sh off     - luu brightness, dat den ve 0 (man den, SSH song)
 #   sh screen.sh on      - khoi phuc brightness da luu
 #   sh screen.sh status  - dang tat hay sang
-# Co che giong Music-Player/files/musicplayer/display.py:
-# ioctl(/dev/disp, 0x102, brightness) qua bin/dispctl (khong can python3;
-# firmware tren may khong co san python3). Fallback python3 neu co.
+# Co che:
+#   - Brick Pro: ioctl(/dev/disp, 0x102, brightness) qua bin/dispctl
+#     (khong can python3; firmware tren may khong co san python3).
+#   - Smart Pro S: khong co /dev/disp -> dung sysfs
+#     /sys/class/backlight/backlight0/brightness (ghi truc tiep).
+#   - Fallback python3 neu co.
 case "$0" in */*) cd "$(dirname "$0")" || exit 1;; esac
 APP="$(pwd)"
 DATA="$APP/data"
 REC="$DATA/display-restore.json"
 DISP=/dev/disp
 CTL="$APP/bin/dispctl"
+# Tim backlight sysfs (Smart Pro S khong co /dev/disp).
+BL=""
+for d in /sys/class/backlight/*/brightness; do
+  [ -w "$d" ] && { BL="$d"; break; }
+done
 
 json_int() {
   # $1=file, $2=key. Lay so nguyen dau tien sau "key": (khong can python).
@@ -43,10 +51,33 @@ saved_brightness() {
   echo 128
 }
 
+cur_brightness() {
+  # Do sang hien tai truc tiep tu sysfs (chinh xac nhat khi co).
+  if [ -n "$BL" ]; then
+    v="$(cat "$BL" 2>/dev/null)"; max="$(cat "${BL%/*}/max_brightness" 2>/dev/null)"
+    if [ -n "$v" ] && [ -n "$max" ] && [ "$max" -gt 0 ] 2>/dev/null; then
+      if [ "$max" -eq 255 ] 2>/dev/null; then echo "$v"; else echo $(( v * 255 / max )); fi
+      return 0
+    fi
+  fi
+  return 1
+}
+
+bl_set() {
+  # $1 = 0..255. Ghi truc tiep sysfs, scale theo max_brightness.
+  [ -n "$BL" ] || return 1
+  max="$(cat "${BL%/*}/max_brightness" 2>/dev/null)"; [ -n "$max" ] || max=255
+  if [ "$max" -eq 255 ] 2>/dev/null; then v="$1"; else v=$(( $1 * max / 255 )); fi
+  echo "$v" > "$BL" 2>/dev/null
+}
+
 disp_set() {
-  # $1 = 0..255. Uu tien binary rieng (khong can python3).
+  # $1 = 0..255. Thu tu: /dev/disp (Brick Pro) -> sysfs (Smart Pro S) -> python3.
   if [ -x "$CTL" ] && [ -e "$DISP" ]; then
     "$CTL" "$1" 2>/dev/null && return 0
+  fi
+  if [ -n "$BL" ]; then
+    bl_set "$1" && return 0
   fi
   if command -v python3 >/dev/null 2>&1 && [ -e "$DISP" ]; then
     python3 - "$DISP" "$1" <<'PYEOF' 2>/dev/null
@@ -58,14 +89,19 @@ fd.close()
 PYEOF
     return $?
   fi
-  echo "khong dieu khien duoc den (thieu $CTL, khong co $DISP hoac python3)" >&2
+  echo "khong dieu khien duoc den (khong co $DISP, khong co backlight sysfs, thieu python3)" >&2
   return 1
 }
 
+has_method() {
+  { [ -x "$CTL" ] && [ -e "$DISP" ]; } || [ -n "$BL" ] || { command -v python3 >/dev/null 2>&1 && [ -e "$DISP" ]; }
+}
+
 cmd_off() {
-  [ -e "$DISP" ] || { echo "khong co $DISP" >&2; return 1; }
+  has_method || { echo "khong co cach dieu khien den man hinh" >&2; return 1; }
   if [ -f "$REC" ]; then echo "man hinh dang TAT"; return 0; fi
-  v="$(saved_brightness)"; [ -n "$v" ] || v=128
+  v="$(cur_brightness 2>/dev/null)" || v=""
+  [ -n "$v" ] || v="$(saved_brightness)"; [ -n "$v" ] || v=128
   mkdir -p "$DATA" 2>/dev/null
   printf '{"brightness": %d}\n' "$v" > "$REC.tmp" 2>/dev/null && mv "$REC.tmp" "$REC" 2>/dev/null
   if disp_set 0; then
@@ -76,7 +112,7 @@ cmd_off() {
 }
 
 cmd_on() {
-  [ -e "$DISP" ] || { echo "khong co $DISP" >&2; return 1; }
+  has_method || { echo "khong co cach dieu khien den man hinh" >&2; return 1; }
   v=""
   [ -f "$REC" ] && v="$(json_int "$REC" brightness)"
   [ -n "$v" ] || v="$(saved_brightness)"
