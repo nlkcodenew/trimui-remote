@@ -1,5 +1,10 @@
 # Changelog — Trimui-Remote
 
+## v0.8.19
+
+- **Icon app mới**: terminal đỏ phát sáng trên nền đen, kèm sóng wifi gợi ý kết nối remote — đồng bộ với brand đỏ/đen của màn hình intro.
+
+
 ## v0.8.18
 
 - **Sửa dropbear không khởi động được khi có data/authorized_keys**: remote.sh truyền `-a <file>` cho dropbear, nhưng `-a` của dropbear 2024.86 là "allow forwarded ports from any host" — không phải đường dẫn authorized_keys — khiến dropbear báo Invalid argument và thoát ngay. Nay bỏ `-a`, copy data/authorized_keys vào /root/.ssh/authorized_keys (chmod 700/600) mỗi lần app chạy; nếu không ghi được thì dùng password auth như cũ. Đồng thời sinh host key trong /tmp rồi cp sang thẻ (tránh lỗi rename trên FAT).
