@@ -372,6 +372,9 @@ static void poll_endpoint(int force) {
  * Hien 1 dong vang tren man hinh de khong "mu mo" khi co ban moi. */
 static char ota_buf[96];
 static Uint32 last_ota_poll;
+/* Khi OTA bao "done <ver>": tu dong restart UI (exit 42) sau vai giay de
+ * chay ban moi ngay, khong can user thoat app bang tay. launch.sh se mo lai. */
+static Uint32 ota_restart_at = 0;
 static int vps_mode = 0;
 static void read_mode_once(void) {
     static int done = 0;
@@ -404,9 +407,13 @@ static void poll_ota(int force) {
         size_t n = strlen(s);
         while (n && (s[n-1] == '\n' || s[n-1] == '\r' || s[n-1] == ' '))
             s[--n] = 0;
-        if (strncmp(s, "done ", 5) == 0)
+        if (strncmp(s, "done ", 5) == 0) {
             snprintf(ota_buf, sizeof(ota_buf),
-                     "Có bản mới %s - thoát app mở lại để dùng", s + 5);
+                     "Đã cập nhật %s - khởi động lại sau 5 giây...", s + 5);
+            /* Chi hen 1 lan: tranh reset lien tuc neu file chua duoc xoa. */
+            if (!ota_restart_at)
+                ota_restart_at = SDL_GetTicks() + 5000;
+        }
         else if (strncmp(s, "downloading ", 12) == 0)
             snprintf(ota_buf, sizeof(ota_buf),
                      "Đang tải bản mới %s...", s + 12);
@@ -515,6 +522,11 @@ int main(int argc, char **argv) {
         if (disp_is_off) { poll_endpoint(0); poll_ota(0); SDL_Delay(100); continue; }
         poll_endpoint(0);
         poll_ota(0);
+        /* OTA cap nhat xong -> tu restart (exit 42) de chay ban moi ngay. */
+        if (ota_restart_at && SDL_GetTicks() >= ota_restart_at) {
+            rc = 42;
+            running = 0;
+        }
 
         SDL_SetRenderDrawColor(ren, 13, 17, 23, 255);
         SDL_RenderClear(ren);

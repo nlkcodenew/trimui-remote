@@ -20,17 +20,18 @@ if [ -f "$APP/data/display-restore.json" ] && [ -x "$APP/screen.sh" ]; then
   sh "$APP/screen.sh" on >> "$LOG" 2>&1 || true
 fi
 
-# 1. OTA chay NEN (khong chan mo app). Co ban moi thi lan mo sau se dung.
+# 1. OTA chay DETACHED (tach hoan toan khoi launcher): thoat app van tiep
+# tuc tai (co resume + lock chong chay chong trong ota-update.sh).
 # Tat bang REMOTE_NO_OTA=1.
 if [ "$REMOTE_NO_OTA" != "1" ] && [ -x "$APP/ota-update.sh" ]; then
-  if command -v timeout >/dev/null 2>&1; then
-    # 90s la qua ngan: 20 file (~2.4MB) tren WiFi cham + 2 lan thu moi nguon
-    # se bi cat giua chung va khong bao gi apply duoc. OTA chay NEN nen keo
-    # thoi gian lai khong lam treu man hinh.
-    timeout 300 sh "$APP/ota-update.sh" --apply >> "$APP/Remote-ota.log" 2>&1 &
+  if command -v setsid >/dev/null 2>&1; then
+    setsid sh "$APP/ota-update.sh" --apply >> "$APP/Remote-ota.log" 2>&1 < /dev/null &
   else
-    sh "$APP/ota-update.sh" --apply >> "$APP/Remote-ota.log" 2>&1 &
+    # khong co setsid: nohup + disown co ban
+    nohup sh "$APP/ota-update.sh" --apply >> "$APP/Remote-ota.log" 2>&1 < /dev/null &
+    disown 2>/dev/null || true
   fi
+  echo "ota: detached pid=$!" >> "$LOG" 2>&1
 fi
 
 # 2. SSH LAN (bat buoc).
@@ -57,8 +58,20 @@ sh "$APP/show-status.sh" --file-only >> "$LOG" 2>&1
 export LD_LIBRARY_PATH="$APP/libs:/usr/trimui/lib:/usr/lib64:/usr/lib:/lib:$LD_LIBRARY_PATH"
 if [ -x "$APP/bin/remote-ui" ]; then
   IP="$(sh "$APP/remote.sh" ip 2>/dev/null)"
-  "$APP/bin/remote-ui" "$IP" "$VER" "$APP" 2>> "$LOG"
-  UIRC=$?
+  while true; do
+    "$APP/bin/remote-ui" "$IP" "$VER" "$APP" 2>> "$LOG"
+    UIRC=$?
+    # UI exit 42 = OTA vua cap nhat xong: mo lai UI de chay ban moi ngay,
+    # khong can user thoat app bang tay.
+    if [ "$UIRC" = "42" ]; then
+      echo "ota: UI restart after update" >> "$LOG" 2>&1
+      VER="$(cat "$APP/VERSION" 2>/dev/null | tr -d ' \r\n')"
+      IP="$(sh "$APP/remote.sh" ip 2>/dev/null)"
+      sh "$APP/show-status.sh" --file-only >> "$LOG" 2>&1
+      continue
+    fi
+    break
+  done
   # UI exit 3 = nguoi dung bam X 2 lan: TAT dich vu de tiet kiem pin.
   if [ "$UIRC" = "3" ]; then
     echo "nguoi dung chon TAT dich vu (X)." >> "$LOG" 2>&1

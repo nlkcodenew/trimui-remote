@@ -1,5 +1,18 @@
 # Changelog — Trimui-Remote
 
+## v0.8.20
+
+- **Sửa OTA không bao giờ tải được bản mới**: máy không có CA certificates hệ
+  thống nên mọi kết nối HTTPS đều lỗi `curl: (60) SSL certificate problem`.
+  Nay đóng gói `certs/cacert.pem` (Mozilla CA bundle) vào app — script OTA đã
+  hỗ trợ sẵn `--cacert` nhưng file này chưa từng được bundle.
+- **OTA chạy detached + resume**: tách hẳn khỏi launcher bằng `setsid` nên
+  thoát app vẫn tải tiếp; có lock file chống chạy chồng và giữ lại file đã
+  tải đúng hash để resume khi bị ngắt giữa chừng.
+- **Tự khởi động lại sau khi update**: UI thấy `.ota-status` = `done <ver>`
+  thì đếm ngược 5 giây rồi thoát với code 42; launch.sh mở lại UI ngay với
+  bản mới — không cần thoát app bằng tay nữa.
+
 ## v0.8.19
 
 - **Icon app mới**: terminal đỏ phát sáng trên nền đen, kèm sóng wifi gợi ý kết nối remote — đồng bộ với brand đỏ/đen của màn hình intro.

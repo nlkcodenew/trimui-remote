@@ -36,6 +36,19 @@ ota_status() {
   mv "$OTA_STATUS.tmp" "$OTA_STATUS" 2>/dev/null || rm -f "$OTA_STATUS.tmp" 2>/dev/null || true
 }
 ota_clear() { rm -f "$OTA_STATUS" "$OTA_STATUS.tmp" 2>/dev/null || true; }
+# Chong chay chong: launch.sh goi moi lan mo app, nhung OTA detached tu lan
+# truoc co the van dang chay (tiep tuc tai sau khi user thoat app).
+OTA_LOCK="/tmp/trimui-remote-ota.lock"
+if [ -f "$OTA_LOCK" ]; then
+  _opid="$(cat "$OTA_LOCK" 2>/dev/null | tr -d ' \r\n')"
+  if [ -n "$_opid" ] && kill -0 "$_opid" 2>/dev/null; then
+    say "OTA dang chay o pid $_opid, bo qua lan nay"
+    exit 0
+  fi
+  rm -f "$OTA_LOCK" 2>/dev/null
+fi
+echo "$$" > "$OTA_LOCK" 2>/dev/null
+trap 'rm -f "$OTA_LOCK" 2>/dev/null' EXIT INT TERM
 # So sanh version dang x.y.z (khong dung sort -V vi BusyBox co the thieu).
 ver_newer() {
   a="$1"; b="$2"
@@ -98,6 +111,11 @@ shell_download_files() {
   while IFS= read -r e; do
     rel="${e%%|*}"; want="${e##*|}"
     [ -n "$rel" ] && [ -n "$want" ] || return 1
+    # Resume: bo qua file da co san trong staging voi hash dung
+    if [ -f "$TMPD/$rel" ]; then
+      have0="$(sha256sum "$TMPD/$rel" 2>/dev/null | cut -d' ' -f1)"
+      if [ "$have0" = "$want" ]; then say "có sẵn $rel"; continue; fi
+    fi
     got=""
     # Thu tu nhieu nguon + 2 lan moi nguon: mang yeu/CDN cham thi van tai duoc.
     for b in $BASES; do
@@ -129,17 +147,34 @@ shell_download_files() {
 # khong bi cache nhoi raw.githubusercontent, nen la du phong chinh khi ca
 # raw.githubusercontent va jsdelivr deu tra ban CU.
 fetch_api() {
-  command -v curl >/dev/null 2>&1 || return 1
+  url="$1"; out="$2"
   # GitHub API tra 403 neu KHONG co header User-Agent.
-  curl -fsSL -H 'Accept: application/vnd.github.raw' \
-    -H 'User-Agent: trimui-remote-ota' \
-    --connect-timeout 5 --max-time 12 -o "$2" "$1" 2>/dev/null
+  # Luu y: curl tren may nay THIEU CA bundle nen luon loi SSL (rc 60) - thuc te
+  # moi thay download duoc la qua wget. Nen phai co ca hai cach.
+  if command -v curl >/dev/null 2>&1; then
+    if [ -f "$CA" ]; then
+      curl -fsSL -H 'Accept: application/vnd.github.raw' -H 'User-Agent: trimui-remote-ota' \
+        --cacert "$CA" --connect-timeout 5 --max-time 12 -o "$out" "$url" 2>/dev/null && return 0
+    fi
+    curl -fsSL -H 'Accept: application/vnd.github.raw' -H 'User-Agent: trimui-remote-ota' \
+      --connect-timeout 5 --max-time 12 -o "$out" "$url" 2>/dev/null && return 0
+  fi
+  if command -v wget >/dev/null 2>&1; then
+    wget -q --timeout=12 --tries=1 \
+      --header='Accept: application/vnd.github.raw' \
+      --header='User-Agent: trimui-remote-ota' \
+      -O "$out" "$url" 2>/dev/null && return 0
+  fi
+  return 1
 }
 
 MANIFEST_JSON="$TMPD.manifest.json"
 MANIFEST_ALT="$TMPD.manifest.alt.json"
 MANIFEST_API="$TMPD.manifest.api.json"
-rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT" "$MANIFEST_API"
+# Resume: GIU lai thu muc staging — file nao da tai dung hash tu lan truoc
+# thi lan nay bo qua (OTA detached co the bi ngat giua chung). Chi xoa cac
+# file manifest cache (nam canh $TMPD, khong nam trong).
+rm -f "$MANIFEST_JSON" "$MANIFEST_ALT" "$MANIFEST_API"
 mkdir -p "$TMPD" 2>/dev/null || { say "Không tạo được thư mục tạm"; exit 1; }
 if [ "$CHANNEL" = "latest" ]; then
   MBASE="https://raw.githubusercontent.com/$REPO/main"
@@ -248,6 +283,13 @@ def get(url):
 fails = []
 for e in files:
     rel = e["path"].replace("/", os.sep)
+    dst = os.path.join(tmpd, rel)
+    # Resume: bo qua file da co san trong staging voi hash dung
+    try:
+        if os.path.isfile(dst) and sha(open(dst, "rb").read()) == e["sha256"]:
+            print("skip (have) " + e["path"]); continue
+    except Exception:
+        pass
     data = None
     for b in bases:
         try:
@@ -273,9 +315,9 @@ if [ "$DL_OK" != "1" ]; then
   say "Thử tải bằng shell (máy không có python3)..."
   if shell_download_files; then DL_OK=1; fi
 fi
-# That bai: xoa file trang thai de LAN SAU app mo lai se thu tiep (khong ghi
-# "failed" vo han, man hinh se bao loi cu khi moi loi da sua xong).
-if [ "$DL_OK" != "1" ]; then say "Tải file thất bại (giữ nguyên bản cũ, lần mở app sau sẽ thử lại)"; rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT"; ota_clear; exit 1; fi
+# That bai: GIU lai staging de lan sau resume (khong xoa $TMPD). Xoa file
+# trang thai de lan mo app sau se thu tiep.
+if [ "$DL_OK" != "1" ]; then say "Tải file thất bại (giữ staging để resume, lần mở app sau sẽ thử lại)"; rm -f "$MANIFEST_JSON" "$MANIFEST_ALT"; ota_clear; exit 1; fi
 # Apply: khong dung pipe-while (exit trong subshell khong lan ra ngoai).
 LIST="$TMPD.apply.list"
 (cd "$TMPD" && find . -type f -print > "$LIST") || { say "Cài đặt thất bại"; rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT"; ota_clear; exit 1; }
@@ -304,7 +346,7 @@ if [ "$GOTV" != "$REM" ]; then
   ota_clear
   exit 1
 fi
-say "Cập nhật xong $CUR -> $REM (đã kiểm tra VERSION). Thoát app và mở lại."
+say "Cập nhật xong $CUR -> $REM (đã kiểm tra VERSION). App sẽ tự khởi động lại."
 ota_status "done $REM"
 # $LIST nam canh $TMPD (khong phai ben trong) nen phai xoa rieng.
 rm -rf "$TMPD" "$MANIFEST_JSON" "$MANIFEST_ALT" "$LIST" "$TMPD.dl.tmp"

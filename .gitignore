@@ -24,3 +24,6 @@ Thumbs.db
 .env*
 credentials*
 secrets/
+# CA bundle CONG KHAI (Mozilla) cho OTA tren may khong co CA he thong.
+# Khong phai secret -> duoc commit + bundle vao app.
+!files/certs/cacert.pem
