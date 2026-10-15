@@ -25,6 +25,11 @@ CHANNEL="${REMOTE_CHANNEL:-latest}"
 CB="$(date +%s 2>/dev/null || echo 0)"; CB=$(( CB / 60 ))
 CA="$APP/certs/cacert.pem"
 LOG="$APP/Remote-ota.log"
+
+# Xoay log: giu 200 dong cuoi (giong tunnel.sh), tranh log cu phinh to vo han.
+if [ -f "$LOG" ] && command -v tail >/dev/null 2>&1; then
+  tail -n 200 "$LOG" > "$LOG.tmp" 2>/dev/null && mv "$LOG.tmp" "$LOG" 2>/dev/null
+fi
 TMPD="$APP/.update_staging"
 say() { echo "[ota] $*"; echo "$(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null) $*" >> "$LOG" 2>/dev/null; }
 # File trang thai de app hien thong bao (checking|downloading <ver>|done <ver>|failed).

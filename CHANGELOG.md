@@ -1,5 +1,15 @@
 # Changelog — Trimui-Remote
 
+## v0.8.22
+
+- **Nút A xoá log**: nhấn A 2 lần (có panel xác nhận) để dọn sạch log của app
+  (Remote-debug.log, Remote-ota.log, Remote-launcher.log, data/tunnel.log,
+  Net-survey-*.log); dịch vụ SSH/tunnel vẫn chạy. Trước đây chỉ có
+  data/tunnel.log được tự xoay (giữ 200 dòng cuối).
+- **Tự xoay log khi app chạy**: Remote-debug.log, Remote-ota.log và
+  Remote-launcher.log nay cũng chỉ giữ 200 dòng cuối mỗi lần start, chống
+  log cũ phình to trên thẻ nhớ.
+
 ## v0.8.21
 
 - **Sửa restart vô hạn sau OTA**: launch.sh xóa file `.ota-status` sau khi

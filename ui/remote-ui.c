@@ -6,6 +6,8 @@
  *   (Brick Pro: ioctl /dev/disp 0x102 ve 0; Smart Pro S: sysfs backlight;
  *   may van thuc + WiFi song, khac Power=suspend).
  *   Bam phim bat ky de sang lai. Luc tat chi Delay 100ms, khong ve gi.
+ * - Nut A (joystick button 1) lan 1: hien panel xac nhan; lan 2 trong 4s: XOA
+ *   toan bo log (Remote-*.log, data/tunnel.log, Net-survey-*.log). Dich vu van chay.
  * - Du phong: SELECT(8)+START(9) cung luc = thoat ngay; ESC tren ban phim cung vay.
  * - Endpoint Internet (VPS co dinh / Pinggy) duoc poll tu tunnel.sh moi 2s.
  * Build (CI): aarch64-linux-gnu-gcc -Os -o remote-ui remote-ui.c -lSDL2 -lSDL2_ttf
@@ -424,6 +426,16 @@ static void poll_ota(int force) {
     fclose(f);
 }
 
+/* Xoa toan bo log cua app (goi tu nut A / phim a sau khi xac nhan 2 lan). */
+static void do_clear_logs(const char *appdir, char *msg, size_t msgn) {
+    char cmd[576];
+    snprintf(cmd, sizeof(cmd), "sh \"%s/clear-logs.sh\" >/dev/null 2>&1", appdir);
+    if (system(cmd) == 0)
+        snprintf(msg, msgn, "Đã xoá log");
+    else
+        snprintf(msg, msgn, "Xoá log thất bại");
+}
+
 int main(int argc, char **argv) {
     const char *lan_ip = (argc > 1 && argv[1][0]) ? argv[1] : "?";
     const char *ver = (argc > 2 && argv[2][0]) ? argv[2] : "";
@@ -470,7 +482,9 @@ int main(int argc, char **argv) {
     snprintf(lan, sizeof(lan), "ssh root@%s -p 2222", lan_ip);
 
     Uint32 confirm_at = 0;
-    int confirm_what = 0; /* 1 = thoat man hinh, 2 = tat dich vu + thoat */
+    int confirm_what = 0; /* 1 = thoat man hinh, 2 = tat dich vu + thoat, 3 = xoa log */
+    Uint32 cleared_at = 0;
+    char cleared_msg[96] = "";
     int rc = 0;
     int running = 1;
     int pressed[16] = {0};
@@ -497,6 +511,13 @@ int main(int argc, char **argv) {
                         screen_on();
                         running = 0;
                     } else { confirm_at = now; confirm_what = what; }
+                } else if (b == BTN_A) {
+                    Uint32 now = SDL_GetTicks();
+                    if (confirm_at && confirm_what == 3 && now - confirm_at < CONFIRM_MS) {
+                        do_clear_logs(appdir, cleared_msg, sizeof(cleared_msg));
+                        cleared_at = now;
+                        confirm_at = 0;
+                    } else { confirm_at = now; confirm_what = 3; }
                 }
             } else if (e.type == SDL_JOYBUTTONUP) {
                 int b = (int)e.jbutton.button;
@@ -506,13 +527,20 @@ int main(int argc, char **argv) {
                 int what = 0;
                 if (e.key.keysym.sym == SDLK_ESCAPE) what = 1;
                 else if (e.key.keysym.sym == SDLK_x) what = 2;
+                else if (e.key.keysym.sym == SDLK_a) what = 3;
                 else if (e.key.keysym.sym == SDLK_y) { screen_off(); confirm_at = 0; continue; }
                 if (what) {
                     Uint32 now = SDL_GetTicks();
                     if (confirm_at && confirm_what == what && now - confirm_at < CONFIRM_MS) {
-                        rc = (what == 2) ? 3 : 0;
-                        screen_on();
-                        running = 0;
+                        if (what == 3) {
+                            do_clear_logs(appdir, cleared_msg, sizeof(cleared_msg));
+                            cleared_at = now;
+                            confirm_at = 0;
+                        } else {
+                            rc = (what == 2) ? 3 : 0;
+                            screen_on();
+                            running = 0;
+                        }
                     } else { confirm_at = now; confirm_what = what; }
                 }
             }
@@ -563,6 +591,7 @@ int main(int argc, char **argv) {
         char auth[160];
         snprintf(auth, sizeof(auth), "User: root   Pass: mật khẩu root của máy");
         draw_text(f_body, auth, W / 2, y, 255, 255, 255); y += lh * 2;
+        draw_text(f_small, "A: xoá log", W / 2, H - sz_small * 9, 140, 140, 140);
         draw_text(f_small, "B: thoát màn hình (dịch vụ vẫn chạy)", W / 2, H - sz_small * 7, 140, 140, 140);
         draw_text(f_small, "Y: tắt màn hình (vẫn SSH, bấm phím bất kỳ để sáng)", W / 2, H - sz_small * 5, 140, 140, 140);
         draw_text(f_small, "X: TẮT dịch vụ + thoát", W / 2, H - sz_small * 3, 140, 140, 140);
@@ -580,7 +609,16 @@ int main(int argc, char **argv) {
             SDL_RenderDrawRect(ren, &box);
             SDL_Rect box2 = {box.x + 3, box.y + 3, box.w - 6, box.h - 6};
             SDL_RenderDrawRect(ren, &box2);
-            draw_text(f_body, confirm_what == 2 ? "BẤM X LẦN NỮA ĐỂ TẮT DỊCH VỤ" : "BẤM B LẦN NỮA ĐỂ THOÁT", W / 2, H / 2 - sz_body, 255, 255, 255);
+            const char *ct = "BẤM B LẦN NỮA ĐỂ THOÁT";
+            if (confirm_what == 2) ct = "BẤM X LẦN NỮA ĐỂ TẮT DỊCH VỤ";
+            else if (confirm_what == 3) ct = "BẤM A LẦN NỮA ĐỂ XOÁ LOG";
+            draw_text(f_body, ct, W / 2, H / 2 - sz_body, 255, 255, 255);
+        }
+        if (cleared_at) {
+            if (SDL_GetTicks() - cleared_at < 2500)
+                draw_text(f_body, cleared_msg, W / 2, H / 2 + sz_body * 2, 63, 185, 80);
+            else
+                cleared_at = 0;
         }
         SDL_RenderPresent(ren);
         SDL_Delay(33);

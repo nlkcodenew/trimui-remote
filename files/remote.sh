@@ -52,6 +52,10 @@ cmd_status() {
 }
 cmd_ip() { lan_ip; }
 cmd_start() {
+  # Xoay log: giu 200 dong cuoi (giong tunnel.sh), tranh log cu phinh to vo han.
+  if [ -f "$LOG" ] && command -v tail >/dev/null 2>&1; then
+    tail -n 200 "$LOG" > "$LOG.tmp" 2>/dev/null && mv "$LOG.tmp" "$LOG" 2>/dev/null
+  fi
   if p="$(running_pid)"; then
     echo "dang chay pid=$p port=$PORT"
     lan_ip > "$IPFILE" 2>/dev/null

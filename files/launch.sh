@@ -7,6 +7,11 @@ APP="$(pwd)"
 SDCARD_PATH="${SDCARD_PATH:-/mnt/SDCARD}"
 export SDCARD_PATH
 LOG="$APP/Remote-launcher.log"
+
+# Xoay log: giu 200 dong cuoi (giong tunnel.sh), tranh log cu phinh to vo han.
+if [ -f "$LOG" ] && command -v tail >/dev/null 2>&1; then
+  tail -n 200 "$LOG" > "$LOG.tmp" 2>/dev/null && mv "$LOG.tmp" "$LOG" 2>/dev/null
+fi
 VER="$(cat "$APP/VERSION" 2>/dev/null | tr -d ' \r\n')"
 
 # Tu chua quyen thuc thi (the nho FAT khong giu +x, copy tay co the mat).

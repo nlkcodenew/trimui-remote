@@ -1,12 +1,17 @@
 {
-  "version": "0.8.21",
+  "version": "0.8.22",
   "app": "trimui-remote",
-  "built": "2026-10-14T15:12:25+07:00",
+  "built": "2026-10-15T11:26:21+07:00",
   "files": [
     {
       "path": "VERSION",
-      "sha256": "14f2df7b94315d4dcd8adba946a2421fe03b0e18f69cdc48fa45d527e13a5536",
+      "sha256": "86456bcc629d981e2e34d7fd53096f0dba9690460593b3b84583be05f3fd544e",
       "size": 7
+    },
+    {
+      "path": "clear-logs.sh",
+      "sha256": "e9d480053c8880d708f8a8177bb5f2ba1fb154f78463c66f7686a05f33078251",
+      "size": 710
     },
     {
       "path": "collect-logs.sh",
@@ -25,8 +30,8 @@
     },
     {
       "path": "launch.sh",
-      "sha256": "52f11407d22bf82fbde3cf2eeebe795801231861a63274cbf2681c96a64bb3f3",
-      "size": 3584
+      "sha256": "d971d4b8d1faec1a9f1758b72be591d74a7298c2c6da5830b8b4719ca06c611f",
+      "size": 3807
     },
     {
       "path": "net-survey.sh",
@@ -35,13 +40,13 @@
     },
     {
       "path": "ota-update.sh",
-      "sha256": "20207b84160861548e69e2e2ee358aead6cd345570e369c121df838170a8a81b",
-      "size": 15651
+      "sha256": "f138973731e6bd346d03d9b1baa46f6de690ef920ed63fc874404fabc3bb1730",
+      "size": 15874
     },
     {
       "path": "remote.sh",
-      "sha256": "17110ab08cb76d27316fdc2e619f2007eb367b63fddd370beec37b4f12e24645",
-      "size": 6422
+      "sha256": "f3d1255ef4057346ad6e3d3ff01ea0bcdc9689c1e264179e17c5ebc55cc78ac7",
+      "size": 6652
     },
     {
       "path": "screen.sh",
@@ -100,8 +105,8 @@
     },
     {
       "path": "bin/remote-ui",
-      "sha256": "04a285b3efac8efefd046f66e02851d0408c23d1d6555d0408ce0833feca6116",
-      "size": 22560
+      "sha256": "9c4f2b12b16285dd4cf12c86d2b1947e52c2edff1cbb07b7407612e04f484d42",
+      "size": 22456
     },
     {
       "path": "certs/cacert.pem",
@@ -110,8 +115,8 @@
     }
   ],
   "release_asset": {
-    "name": "trimui-remote-v0.8.21.zip",
-    "sha256": "22eacbc521f956121ae1f21d791c80aef41b85cc679a7df3aae26c5c79d277ce",
-    "size": 1340008
+    "name": "trimui-remote-v0.8.22.zip",
+    "sha256": "2fbe64a7ad497e1744c05dd01935a2dfa8ade2300c39e81f9cc121b7358b415f",
+    "size": 1339835
   }
 }
