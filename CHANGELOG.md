@@ -1,5 +1,9 @@
 # Changelog — Trimui-Remote
 
+## v0.8.23
+
+- Icon mới: glossy 3D, nền trong suốt.
+
 ## v0.8.22
 
 - **Nút A xoá log**: nhấn A 2 lần (có panel xác nhận) để dọn sạch log của app
