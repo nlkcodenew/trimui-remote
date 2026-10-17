@@ -1,5 +1,9 @@
 # Changelog — Trimui-Remote
 
+## v0.8.24
+
+- Launcher background riêng: nền gradient xanh navy + quầng cyan (theo tông icon), hiện khi focus icon app trong menu máy.
+
 ## v0.8.23
 
 - Icon mới: glossy 3D, nền trong suốt.
